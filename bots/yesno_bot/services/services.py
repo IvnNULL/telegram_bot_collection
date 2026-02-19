@@ -1,13 +1,12 @@
-import aiohttp
 import logging
-
-import asyncio
+from utils.http_client import HttpClient
 
 logger = logging.getLogger(__name__)
 
+
 async def get_gif():
-    async with aiohttp.ClientSession() as session:
-        async with session.get('https://yesno.wtf/api') as response:
-            if response.status != 200:
-                return None
-            return await response.json()
+    session = await HttpClient.get_session()
+    async with session.get('https://yesno.wtf/api') as response:
+        if response.status != 200:
+            return None
+        return await response.json()
