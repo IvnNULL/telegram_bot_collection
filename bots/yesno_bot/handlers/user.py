@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import Command, CommandStart
 from texts.texts import TEXTS
-from services.services import get_gif
+from services.services import get_answer
 
 router = Router()
 
@@ -18,7 +18,7 @@ async def process_help_command(message: Message):
 
 @router.message(F.text)
 async def process_unknown_message(message: Message):
-    answer = await get_gif()
+    answer = await get_answer()
     if answer:
         await message.reply_animation(animation=answer['image'], caption=answer['answer'].capitalize())
     else:
