@@ -6,5 +6,5 @@ router = Router()
 
 
 @router.message()
-async def process_start_command(message: Message):
+async def process_unknown_message(message: Message):
     await message.answer(text=TEXTS['no_text'])

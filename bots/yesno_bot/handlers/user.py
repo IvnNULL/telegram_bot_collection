@@ -16,8 +16,9 @@ async def process_start_command(message: Message):
 async def process_help_command(message: Message):
     await message.answer(text=TEXTS['/help'])
 
+
 @router.message(F.text)
-async def process_unknown_message(message: Message):
+async def process_question_message(message: Message):
     answer = await get_answer()
     if answer:
         await message.reply_animation(animation=answer['image'], caption=answer['answer'].capitalize())
