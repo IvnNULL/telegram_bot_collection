@@ -1,0 +1,8 @@
+services:
+  yesno_bot:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./assets:/app/assets
+    restart: always
