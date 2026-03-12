@@ -4,8 +4,11 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from handlers import user
+from aiogram.fsm.storage.memory import MemoryStorage
+
 from config.config import load_config, Config
+from handlers.user import user_router
+from handlers.form import form_router
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +21,14 @@ async def main():
         format=config.log.format,
     )
 
+    storage = MemoryStorage()
+
     logger.info('Starting bot...')
     bot = Bot(token=config.bot.token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp = Dispatcher()
+    dp = Dispatcher(storage=storage)
 
-    dp.include_router(user.router)
+    dp.include_router(form_router)
+    dp.include_router(user_router)
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
