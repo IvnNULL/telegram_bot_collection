@@ -13,4 +13,9 @@ TEXTS = {
 
     'save_form': 'Заглушка save_form',
     'cancel_form': 'Заглушка save_form',
+
+    '/start_menu': 'Заглушка /start',
+    '/help_menu': 'Заглушка /help',
+    '/add_menu': 'Заглушка /add',
+    '/show_menu': 'Заглушка /show',
 }
