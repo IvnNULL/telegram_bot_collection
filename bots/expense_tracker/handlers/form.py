@@ -1,14 +1,17 @@
 import logging
+from datetime import date
 
 from aiogram import Router, F
 from aiogram.filters import Command, StateFilter
-from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
+from aiogram.types import Message, CallbackQuery
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+
+from database.db import add_expense
+from keyboards.keyboards import get_save_form_kb
 from states.states import FSMFillForm
 from texts.texts import TEXTS
-from keyboards.keyboards import get_save_form_kb
-from datetime import date
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +71,22 @@ async def process_payer_send(message: Message, state: FSMContext):
 
 
 @form_router.callback_query(StateFilter(FSMFillForm.save_form), F.data.in_(['save_form', 'cancel_form']))
-async def process_save_form(callback: CallbackQuery, state: FSMContext):
+async def process_save_form(callback: CallbackQuery, state: FSMContext,
+                            session_factory: async_sessionmaker[AsyncSession]):
     await callback.message.edit_reply_markup()
     if callback.data == 'save_form':
+        async with session_factory() as session:
+            data = await state.get_data()
+            await add_expense(
+                session,
+                user_id=callback.from_user.id,
+                exp_date=data['date'],
+                category=data['category'],
+                place=data['place'],
+                description=data['description'],
+                amount=data['amount'],
+                payer=data['payer']
+            )
         await callback.message.answer(text=TEXTS['save_form'])
     else:
         await callback.message.edit_text(text=TEXTS['cancel_form'])

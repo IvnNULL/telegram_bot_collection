@@ -11,6 +11,7 @@ from config.config import load_config, Config
 from handlers.user import user_router
 from handlers.form import form_router
 from keyboards.menu_button import DEFAULT_COMMANDS
+from database.connection import create_db
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +36,18 @@ async def main():
     bot = Bot(token=config.bot.token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher(storage=storage)
 
+    _, session_factory = create_db(config.db.url)
+
     dp.include_router(form_router)
     dp.include_router(user_router)
 
     dp.startup.register(on_startup)
 
     await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    await dp.start_polling(
+        bot,
+        session_factory=session_factory
+    )
 
 
 if __name__ == '__main__':
