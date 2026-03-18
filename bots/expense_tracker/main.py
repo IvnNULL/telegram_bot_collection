@@ -8,17 +8,17 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommandScopeDefault
 
 from config.config import load_config, Config
-from handlers.user import user_router
-from handlers.form import form_router
-from keyboards.menu_button import DEFAULT_COMMANDS
 from database.connection import create_db
+from handlers.form import form_router
+from handlers.user import user_router
+from keyboards.menu_button import DEFAULT_COMMANDS
+from middlewares.access import AccessMiddleware
 
 logger = logging.getLogger(__name__)
 
 
 async def on_startup(bot: Bot):
     logging.info('Setting up default commands.')
-    # await bot.delete_my_commands(scope=BotCommandScopeDefault())
     await bot.set_my_commands(commands=DEFAULT_COMMANDS, scope=BotCommandScopeDefault())
 
 
@@ -38,15 +38,20 @@ async def main():
 
     _, session_factory = create_db(config.db.url)
 
+    logger.info('Including routers...')
     dp.include_router(form_router)
     dp.include_router(user_router)
+
+    logger.info('Including middlewares...')
+    dp.update.middleware(AccessMiddleware())
 
     dp.startup.register(on_startup)
 
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(
         bot,
-        session_factory=session_factory
+        session_factory=session_factory,
+        allow_id=config.bot.allow_ids
     )
 
 
