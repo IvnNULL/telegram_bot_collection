@@ -20,10 +20,15 @@ form_router = Router()
 
 @form_router.message(Command(commands='add'), StateFilter(default_state))
 async def process_add_command(message: Message, state: FSMContext):
+    await message.answer(text=TEXTS['fill_start'])
     await state.set_state(FSMFillForm.fill_category)
     await state.update_data(date=date.today())
     await message.answer(text=TEXTS['fill_category'])
 
+@form_router.message(StateFilter(FSMFillForm), Command(commands='cancel'))
+async def process_category_send(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(text=TEXTS['fill_cancel'])
 
 @form_router.message(StateFilter(FSMFillForm.fill_category), F.text)
 async def process_category_send(message: Message, state: FSMContext):
@@ -48,7 +53,13 @@ async def process_description_send(message: Message, state: FSMContext):
 
 @form_router.message(StateFilter(FSMFillForm.fill_amount), F.text)
 async def process_amount_send(message: Message, state: FSMContext):
-    await state.update_data(amount=message.text)
+    try:
+        amount = int(message.text.replace(',', '.').replace(' ', ''))
+    except ValueError:
+        await message.answer(TEXTS['fill_amount_error'])
+        return
+
+    await state.update_data(amount=amount)
     await state.set_state(FSMFillForm.fill_payer)
     await message.answer(text=TEXTS['fill_payer'])
 
@@ -91,3 +102,7 @@ async def process_save_form(callback: CallbackQuery, state: FSMContext,
     else:
         await callback.message.edit_text(text=TEXTS['cancel_form'])
     await state.clear()
+
+@form_router.message(StateFilter(FSMFillForm))
+async def process_wrong_send(message: Message):
+    await message.answer(text=TEXTS['fill_wrong'])
