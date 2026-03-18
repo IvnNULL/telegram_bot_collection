@@ -35,3 +35,8 @@ async def process_show_command(message: Message, session_factory: async_sessionm
     async with session_factory() as session:
         text = await get_expenses_csv_text(session)
     await message.answer(text=text)
+
+
+@user_router.message()
+async def process_other_message(message: Message):
+    await message.answer(text=TEXTS['other'])

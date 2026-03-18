@@ -28,7 +28,7 @@ async def process_add_command(message: Message, state: FSMContext):
 @form_router.message(StateFilter(FSMFillForm), Command(commands='cancel'))
 async def process_category_send(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(text=TEXTS['fill_cancel'])
+    await message.answer(text=TEXTS['cancel_form'])
 
 @form_router.message(StateFilter(FSMFillForm.fill_category), F.text)
 async def process_category_send(message: Message, state: FSMContext):

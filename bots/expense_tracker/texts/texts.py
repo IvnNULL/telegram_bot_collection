@@ -1,28 +1,51 @@
 TEXTS = {
-    '/start': 'Заглушка /start',
-    '/help': 'Заглушка /help',
+    '/start': (
+        'Привет.\n\n'
+        'Это бот для учёта расходов.\n'
+        'Ты можешь добавлять траты и выгружать их в удобном формате.\n\n'
+        'Доступные команды:\n'
+        '/add — добавить трату\n'
+        '/show — показать список\n'
+        '/show_csv — выгрузка для Excel\n'
+        '/help — помощь'
+    ),
 
-    'no_expenses': 'Заглушка пустого списка',
+    '/help': (
+        'Как пользоваться ботом:\n\n'
+        '/add — пошаговое добавление траты\n'
+        '/show — просмотр всех трат\n'
+        '/show_csv — выгрузка в формате для Excel\n\n'
+        'Во время заполнения формы можно отменить командой /cancel'
+    ),
 
-    'fill_start': 'Заглушка fill_start /cancel',
-    'fill_cancel': 'Заглушка fill_cancel',
-    'fill_wrong': 'Заглушка fill_wrong',
+    'other': (
+        'Доступные команды:\n'
+        '/add — добавить трату\n'
+        '/show — показать список\n'
+        '/show_csv — выгрузка для Excel\n'
+        '/help — помощь'
+    ),
 
-    'fill_category': 'Заглушка fill_category',
-    'fill_place': 'Заглушка fill_place',
-    'fill_description': 'Заглушка fill_description',
-    'fill_amount': 'Заглушка fill_amount',
-    'fill_amount_error': 'Заглушка fill_amount_error',
-    'fill_payer': 'Заглушка fill_payer',
+    'no_expenses': 'Список расходов пуст',
+
+    'fill_start': 'Начинаем добавление траты. Для отмены введи /cancel',
+    'fill_wrong': 'Ожидаю текстовое значение. Попробуй ещё раз',
+
+    'fill_category': 'Введите категорию (например: Продукты, Транспорт)',
+    'fill_place': 'Где была трата? (магазин, кафе и т.д.)',
+    'fill_description': 'Краткое описание траты',
+    'fill_amount': 'Введите сумму',
+    'fill_amount_error': 'Некорректная сумма. Введите число',
+    'fill_payer': 'Кто платил? (например: Я, Общие и т.д.)',
 
     'save_button': 'Сохранить',
     'cancel_button': 'Отмена',
 
-    'save_form': 'Заглушка save_form',
-    'cancel_form': 'Заглушка cancel_form',
+    'save_form': 'Трата сохранена',
+    'cancel_form': 'Сохранение отменено',
 
-    '/start_menu': 'Заглушка /start',
-    '/help_menu': 'Заглушка /help',
-    '/add_menu': 'Заглушка /add',
-    '/show_menu': 'Заглушка /show',
+    '/start_menu': 'Запуск бота',
+    '/help_menu': 'Помощь',
+    '/add_menu': 'Добавить трату',
+    '/show_menu': 'Показать расходы',
 }
