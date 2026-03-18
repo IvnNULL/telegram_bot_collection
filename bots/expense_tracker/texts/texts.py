@@ -2,6 +2,8 @@ TEXTS = {
     '/start': 'Заглушка /start',
     '/help': 'Заглушка /help',
 
+    'no_expenses': 'Заглушка пустого списка',
+
     'fill_category': 'Заглушка fill_category',
     'fill_place': 'Заглушка fill_place',
     'fill_description': 'Заглушка fill_description',

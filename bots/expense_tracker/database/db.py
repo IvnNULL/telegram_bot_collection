@@ -1,6 +1,7 @@
 import logging
 from datetime import date
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import Expense
@@ -32,3 +33,9 @@ async def add_expense(
     logger.debug(f'Add expense from {user_id}')
     await session.commit()
     logger.debug(f'Add expense from {user_id} completed')
+
+
+async def list_expenses(session: AsyncSession) -> list[Expense] | None:
+    data = await session.execute(select(Expense).order_by(Expense.date))
+    rows = data.scalars().all()
+    return rows if rows else None
