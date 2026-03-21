@@ -1,5 +1,5 @@
 services:
-  yesno_bot:
+  expense_tracker_bot:
     build: .
     env_file:
       - .env
