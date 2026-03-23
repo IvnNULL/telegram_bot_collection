@@ -1,0 +1,8 @@
+services:
+  expense_tracker_bot:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: always
