@@ -5,6 +5,7 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
+from database.db import clear_expenses
 from services.expense_service import get_expenses_text, get_expenses_csv_text
 from texts.texts import TEXTS
 
@@ -35,6 +36,12 @@ async def process_show_command(message: Message, session_factory: async_sessionm
     async with session_factory() as session:
         text = await get_expenses_csv_text(session)
     await message.answer(text=text)
+
+@user_router.message(Command(commands='clear'))
+async def process_show_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
+    async with session_factory() as session:
+        await clear_expenses(session)
+    await message.answer(text=TEXTS['/clear'])
 
 
 @user_router.message()

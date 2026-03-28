@@ -1,7 +1,7 @@
 import logging
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import Expense
@@ -39,3 +39,8 @@ async def list_expenses(session: AsyncSession) -> list[Expense] | None:
     data = await session.execute(select(Expense).order_by(Expense.date))
     rows = data.scalars().all()
     return rows if rows else None
+
+
+async def clear_expenses(session: AsyncSession) -> None:
+    await session.execute(delete(Expense))
+    await session.commit()
