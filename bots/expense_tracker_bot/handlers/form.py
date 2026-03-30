@@ -5,11 +5,11 @@ from aiogram import Router, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
-from database.db import add_expense
-from keyboards.keyboards import get_save_form_kb
+from database.db import add_expense, add_payer, list_payers
+from keyboards.keyboards import get_save_form_kb, get_payers_kb
 from states.states import FSMFillForm
 from texts.texts import TEXTS
 
@@ -25,10 +25,12 @@ async def process_add_command(message: Message, state: FSMContext):
     await state.update_data(date=date.today())
     await message.answer(text=TEXTS['fill_category'])
 
+
 @form_router.message(StateFilter(FSMFillForm), Command(commands='cancel'))
 async def process_category_send(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(text=TEXTS['cancel_form'])
+    await message.answer(text=TEXTS['cancel_form'], reply_markup=ReplyKeyboardRemove())
+
 
 @form_router.message(StateFilter(FSMFillForm.fill_category), F.text)
 async def process_category_send(message: Message, state: FSMContext):
@@ -52,7 +54,7 @@ async def process_description_send(message: Message, state: FSMContext):
 
 
 @form_router.message(StateFilter(FSMFillForm.fill_amount), F.text)
-async def process_amount_send(message: Message, state: FSMContext):
+async def process_amount_send(message: Message, state: FSMContext, session_factory: async_sessionmaker[AsyncSession]):
     try:
         amount = int(message.text.replace(',', '.').replace(' ', ''))
     except ValueError:
@@ -61,14 +63,21 @@ async def process_amount_send(message: Message, state: FSMContext):
 
     await state.update_data(amount=amount)
     await state.set_state(FSMFillForm.fill_payer)
-    await message.answer(text=TEXTS['fill_payer'])
+    async with session_factory() as session:
+        payers = await list_payers(session)
+    await message.answer(text=TEXTS['fill_payer'], reply_markup=get_payers_kb(payers))
 
 
 @form_router.message(StateFilter(FSMFillForm.fill_payer), F.text)
 async def process_payer_send(message: Message, state: FSMContext):
     await state.update_data(payer=message.text)
-    data = await state.get_data()
 
+    await message.answer(
+        text=TEXTS['check_form'],
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+    data = await state.get_data()
     await message.answer(
         text=f'Дата: {data['date']}\n'
              f'Категория: {data['category']}\n'
@@ -78,6 +87,7 @@ async def process_payer_send(message: Message, state: FSMContext):
              f'Плательщик: {data['payer']}',
         reply_markup=get_save_form_kb()
     )
+
     await state.set_state(FSMFillForm.save_form)
 
 
@@ -98,10 +108,12 @@ async def process_save_form(callback: CallbackQuery, state: FSMContext,
                 amount=data['amount'],
                 payer=data['payer']
             )
+            await add_payer(session, payer=data['payer'])
         await callback.message.answer(text=TEXTS['save_form'])
     else:
         await callback.message.edit_text(text=TEXTS['cancel_form'])
     await state.clear()
+
 
 @form_router.message(StateFilter(FSMFillForm))
 async def process_wrong_send(message: Message):
