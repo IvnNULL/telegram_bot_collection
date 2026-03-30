@@ -65,7 +65,10 @@ async def process_amount_send(message: Message, state: FSMContext, session_facto
     await state.set_state(FSMFillForm.fill_payer)
     async with session_factory() as session:
         payers = await list_payers(session)
-    await message.answer(text=TEXTS['fill_payer'], reply_markup=get_payers_kb(payers))
+    if payers is None:
+        await message.answer(text=TEXTS['fill_payer'])
+    else:
+        await message.answer(text=TEXTS['fill_payer'], reply_markup=get_payers_kb(payers))
 
 
 @form_router.message(StateFilter(FSMFillForm.fill_payer), F.text)
