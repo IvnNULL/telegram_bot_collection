@@ -59,3 +59,8 @@ async def add_payer(session: AsyncSession, *, payer: str) -> None:
         session.add(new_payer)
 
     await session.commit()
+
+async def list_payers(session: AsyncSession) -> list[Payer]|None:
+    data = await session.execute(select(Payer).order_by(Payer.counter.desc()))
+    rows = data.scalars().all()
+    return rows if rows else None
