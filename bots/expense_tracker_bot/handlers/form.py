@@ -8,7 +8,7 @@ from aiogram.fsm.state import default_state
 from aiogram.types import Message, CallbackQuery
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
-from database.db import add_expense
+from database.db import add_expense, add_payer
 from keyboards.keyboards import get_save_form_kb
 from states.states import FSMFillForm
 from texts.texts import TEXTS
@@ -98,6 +98,7 @@ async def process_save_form(callback: CallbackQuery, state: FSMContext,
                 amount=data['amount'],
                 payer=data['payer']
             )
+            await add_payer(session, payer=data['payer'])
         await callback.message.answer(text=TEXTS['save_form'])
     else:
         await callback.message.edit_text(text=TEXTS['cancel_form'])

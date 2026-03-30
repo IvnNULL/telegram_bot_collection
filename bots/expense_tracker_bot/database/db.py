@@ -4,7 +4,7 @@ from datetime import date
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models import Expense
+from database.models import Expense, Payer
 
 logger = logging.getLogger(__name__)
 
@@ -43,4 +43,19 @@ async def list_expenses(session: AsyncSession) -> list[Expense] | None:
 
 async def clear_expenses(session: AsyncSession) -> None:
     await session.execute(delete(Expense))
+    await session.commit()
+
+
+async def add_payer(session: AsyncSession, *, payer: str) -> None:
+    result = await session.execute(
+        select(Payer).filter_by(payer=payer)
+    )
+    payer_exist = result.scalar_one_or_none()
+
+    if payer_exist:
+        payer_exist.counter += 1
+    else:
+        new_payer = Payer(payer=payer)
+        session.add(new_payer)
+
     await session.commit()
