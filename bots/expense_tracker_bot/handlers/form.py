@@ -56,7 +56,7 @@ async def process_description_send(message: Message, state: FSMContext):
 @form_router.message(StateFilter(FSMFillForm.fill_amount), F.text)
 async def process_amount_send(message: Message, state: FSMContext, session_factory: async_sessionmaker[AsyncSession]):
     try:
-        amount = int(message.text.replace(',', '.').replace(' ', ''))
+        amount = int(float(message.text.replace(',', '.').replace(' ', '')))
     except ValueError:
         await message.answer(TEXTS['fill_amount_error'])
         return
