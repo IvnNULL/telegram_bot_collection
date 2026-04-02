@@ -14,7 +14,7 @@ async def get_expenses_text(session: AsyncSession) -> str:
     for expense in expenses:
         if previous_date != expense.date:
             previous_date = expense.date
-            text += f'\n\n{expense.date}\n'
+            text += f'\n\n{expense.date.strftime('%d.%m.%Y')}\n'
         text += f'{expense.place}: {expense.amount:_} р. - {expense.payer}\n'
 
     return text
@@ -29,7 +29,7 @@ async def get_expenses_csv_text(session: AsyncSession) -> str:
     lines = []
     for expense in expenses:
         lines.append(
-            f'{expense.date};'
+            f'{expense.date.strftime('%d.%m.%Y')};'
             f'{expense.category};'
             f'{expense.place};'
             f'{expense.description};'
