@@ -14,8 +14,9 @@ async def get_expenses_text(session: AsyncSession) -> str:
     for expense in expenses:
         if previous_date != expense.date:
             previous_date = expense.date
-            text += f'\n\n{expense.date.strftime('%d.%m.%Y')}\n'
-        text += f'{expense.place}: {expense.amount:_} р. - {expense.payer}\n'
+            text += f'\n<b>{expense.date.strftime('%d.%m.%Y')}</b>\n'
+        amount = f'{expense.amount:_}'.replace('_', ' ')
+        text += f'{expense.place}: {amount} р. - {expense.payer}\n'
 
     return text
 
