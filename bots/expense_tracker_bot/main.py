@@ -51,7 +51,7 @@ async def main():
     await dp.start_polling(
         bot,
         session_factory=session_factory,
-        allow_id=config.bot.allow_ids
+        allow_ids=config.bot.allow_ids
     )
 
 

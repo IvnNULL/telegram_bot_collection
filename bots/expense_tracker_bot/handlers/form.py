@@ -1,7 +1,7 @@
 import logging
 from datetime import date
 
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
@@ -19,7 +19,7 @@ form_router = Router()
 
 
 @form_router.message(StateFilter(FSMFillForm), Command(commands='cancel'))
-async def process_category_send(message: Message, state: FSMContext):
+async def process_cancel_command(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(text=TEXTS['cancel_form'], reply_markup=ReplyKeyboardRemove())
 
@@ -94,11 +94,8 @@ async def process_change_date(message: Message, state: FSMContext):
 
 
 @form_router.callback_query(StateFilter(FSMFillForm.save_form), F.data == 'change_date_form')
-async def process_cancel_form(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    if data.get('form_preview_msg'):
-        await data['form_preview_msg'].delete()
-        await state.update_data(form_preview_msg=None)
+async def process_cancel_form(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    await delete_form_preview(callback, state, bot)
 
     await callback.message.delete()
     await state.set_state(FSMFillForm.change_date)
@@ -127,7 +124,8 @@ async def process_save_form(callback: CallbackQuery, state: FSMContext,
 
 
 @form_router.callback_query(StateFilter(FSMFillForm.save_form), F.data == 'cancel_form')
-async def process_cancel_form(callback: CallbackQuery, state: FSMContext):
+async def process_cancel_form(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    await delete_form_preview(callback, state, bot)
     await callback.message.edit_text(text=TEXTS['cancel_form'])
     await state.clear()
 
@@ -148,8 +146,16 @@ async def send_form_preview(message: Message, state: FSMContext):
              f'Плательщик: {data['payer']}',
         reply_markup=ReplyKeyboardRemove()
     )
-    await state.update_data(form_preview_msg=msg)
+    await state.update_data(preview_message_id=msg.message_id)
     await message.answer(
         text=TEXTS['check_form'],
         reply_markup=get_save_form_kb()
     )
+
+
+async def delete_form_preview(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    if data.get('preview_message_id'):
+        user_id = callback.from_user.id
+        await bot.delete_message(chat_id=user_id, message_id=data.get('preview_message_id'))
+        await state.update_data(preview_message_id=None)

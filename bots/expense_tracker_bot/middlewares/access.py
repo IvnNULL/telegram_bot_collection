@@ -15,7 +15,7 @@ class AccessMiddleware(BaseMiddleware):
             data: dict[str, Any]
     ) -> Any:
         user: User = data.get('event_from_user')
-        if user.id not in data['allow_id']:
+        if not user or user.id not in data['allow_ids']:
             logger.info(f'Unidentified user with ID {user.id}')
             return None
 
