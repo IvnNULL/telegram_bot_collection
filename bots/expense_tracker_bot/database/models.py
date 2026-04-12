@@ -28,3 +28,12 @@ class Payer(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     payer: Mapped[str] = mapped_column(unique=True)
     counter: Mapped[int] = mapped_column(default=1)
+
+
+class PlaceCategory(Base):
+    __tablename__ = 'place_categories'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    place: Mapped[str]
+    category: Mapped[str]
+    counter: Mapped[int] = mapped_column(default=1)
