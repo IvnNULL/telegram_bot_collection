@@ -28,13 +28,6 @@ async def process_cancel_command(message: Message, state: FSMContext):
 async def process_add_command(message: Message, state: FSMContext):
     await message.answer(text=TEXTS['fill_start'])
     await state.update_data(date=date.today())
-    await state.set_state(FSMFillForm.fill_category)
-    await message.answer(text=TEXTS['fill_category'])
-
-
-@form_router.message(StateFilter(FSMFillForm.fill_category), F.text)
-async def process_category_send(message: Message, state: FSMContext):
-    await state.update_data(category=message.text)
     await state.set_state(FSMFillForm.fill_place)
     await message.answer(text=TEXTS['fill_place'])
 
@@ -42,6 +35,15 @@ async def process_category_send(message: Message, state: FSMContext):
 @form_router.message(StateFilter(FSMFillForm.fill_place), F.text)
 async def process_place_send(message: Message, state: FSMContext):
     await state.update_data(place=message.text)
+    await state.set_state(FSMFillForm.fill_category)
+    await message.answer(text=TEXTS['fill_category'])
+
+
+@form_router.message(StateFilter(FSMFillForm.fill_category), F.text)
+async def process_category_send(message: Message, state: FSMContext):
+    await state.update_data(category=message.text)
+
+
     await state.set_state(FSMFillForm.fill_description)
     await message.answer(text=TEXTS['fill_description'])
 
