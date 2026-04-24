@@ -82,7 +82,7 @@ async def add_place_category(session: AsyncSession, *, place: str, category: str
     await session.commit()
 
 
-async def get_category_by_place(session: AsyncSession, *, place: str) -> None:
+async def get_category_by_place(session: AsyncSession, *, place: str) -> list[str] | None:
     stmt = (
         select(PlaceCategory.category)
         .filter_by(place=place)

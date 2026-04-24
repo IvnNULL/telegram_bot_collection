@@ -29,6 +29,15 @@ def get_payers_kb(payers: list[Payer]) -> ReplyKeyboardMarkup:
     return builder.as_markup(resize_keyboard=True)
 
 
+def get_kb(texts: list[str], adjust: int = 3):
+    builder = ReplyKeyboardBuilder()
+    for text in texts:
+        builder.add(KeyboardButton(text=text))
+    builder.adjust(3)
+
+    return builder.as_markup(resize_keyboard=True)
+
+
 def get_date_kb(format_date: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[[

@@ -8,8 +8,8 @@ from aiogram.fsm.state import default_state
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
-from database.db import add_expense, add_payer, list_payers
-from keyboards.keyboards import get_save_form_kb, get_payers_kb, get_date_kb
+from database.db import add_expense, add_payer, list_payers, add_place_category, get_category_by_place
+from keyboards.keyboards import get_save_form_kb, get_payers_kb, get_date_kb, get_kb
 from states.states import FSMFillForm
 from texts.texts import TEXTS
 
@@ -33,19 +33,24 @@ async def process_add_command(message: Message, state: FSMContext):
 
 
 @form_router.message(StateFilter(FSMFillForm.fill_place), F.text)
-async def process_place_send(message: Message, state: FSMContext):
+async def process_place_send(message: Message, state: FSMContext, session_factory: async_sessionmaker[AsyncSession]):
     await state.update_data(place=message.text)
     await state.set_state(FSMFillForm.fill_category)
-    await message.answer(text=TEXTS['fill_category'])
+
+    async with session_factory() as session:
+        categories = await get_category_by_place(session, place=message.text)
+    if categories is None:
+        await message.answer(text=TEXTS['fill_category'])
+    else:
+        await message.answer(text=TEXTS['fill_category'], reply_markup=get_kb(categories))
 
 
 @form_router.message(StateFilter(FSMFillForm.fill_category), F.text)
 async def process_category_send(message: Message, state: FSMContext):
     await state.update_data(category=message.text)
 
-
     await state.set_state(FSMFillForm.fill_description)
-    await message.answer(text=TEXTS['fill_description'])
+    await message.answer(text=TEXTS['fill_description'], reply_markup=ReplyKeyboardRemove())
 
 
 @form_router.message(StateFilter(FSMFillForm.fill_description), F.text)
@@ -120,6 +125,7 @@ async def process_save_form(callback: CallbackQuery, state: FSMContext,
             payer=data['payer']
         )
         await add_payer(session, payer=data['payer'])
+        await add_place_category(session, place=data['place'], category=data['category'])
 
     await callback.message.edit_text(text=TEXTS['save_form'])
     await state.clear()
