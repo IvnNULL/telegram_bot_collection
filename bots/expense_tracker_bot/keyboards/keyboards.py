@@ -13,8 +13,8 @@ def get_save_form_kb() -> InlineKeyboardMarkup:
     cancel_button = InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data='cancel_form')
 
     keyboard = [
+        [save_button, cancel_button],
         [change_date_button],
-        [save_button, cancel_button]
     ]
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
@@ -24,6 +24,15 @@ def get_payers_kb(payers: list[Payer]) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     for payer in payers:
         builder.add(KeyboardButton(text=payer.payer))
+    builder.adjust(3)
+
+    return builder.as_markup(resize_keyboard=True)
+
+
+def get_kb(texts: list[str], adjust: int = 3):
+    builder = ReplyKeyboardBuilder()
+    for text in texts:
+        builder.add(KeyboardButton(text=text))
     builder.adjust(3)
 
     return builder.as_markup(resize_keyboard=True)
