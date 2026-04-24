@@ -13,8 +13,8 @@ def get_save_form_kb() -> InlineKeyboardMarkup:
     cancel_button = InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data='cancel_form')
 
     keyboard = [
+        [save_button, cancel_button],
         [change_date_button],
-        [save_button, cancel_button]
     ]
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
