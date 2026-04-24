@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -37,3 +37,7 @@ class PlaceCategory(Base):
     place: Mapped[str]
     category: Mapped[str]
     counter: Mapped[int] = mapped_column(default=1)
+
+    __table_args__ = (
+        UniqueConstraint('place', 'category', name="uq_place_category"),
+    )
