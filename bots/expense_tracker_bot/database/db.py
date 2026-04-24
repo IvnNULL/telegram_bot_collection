@@ -4,7 +4,7 @@ from datetime import date
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.models import Expense, Payer
+from database.models import Expense, Payer, PlaceCategory
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,35 @@ async def add_payer(session: AsyncSession, *, payer: str) -> None:
 
     await session.commit()
 
-async def list_payers(session: AsyncSession) -> list[Payer]|None:
+
+async def list_payers(session: AsyncSession) -> list[Payer] | None:
     data = await session.execute(select(Payer).order_by(Payer.counter.desc()))
     rows = data.scalars().all()
+    return rows if rows else None
+
+
+async def add_place_category(session: AsyncSession, *, place: str, category: str) -> None:
+    stmt = await session.execute(
+        select(PlaceCategory).filter_by(place=place, category=category)
+    )
+    item = stmt.scalar_one_or_none()
+
+    if item:
+        item.counter += 1
+    else:
+        new_item = PlaceCategory(place=place, category=category)
+        session.add(new_item)
+
+    await session.commit()
+
+
+async def get_category_by_place(session: AsyncSession, *, place: str) -> None:
+    stmt = (
+        select(PlaceCategory.category)
+        .filter_by(place=place)
+        .order_by(PlaceCategory.counter.desc())
+        # .limit(3)
+    )
+    rows = await session.execute(stmt)
+    rows = rows.scalars().all()
     return rows if rows else None
