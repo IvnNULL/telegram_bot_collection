@@ -42,7 +42,7 @@ async def process_place_send(message: Message, state: FSMContext, session_factor
     if categories is None:
         await message.answer(text=TEXTS['fill_category'])
     else:
-        await message.answer(text=TEXTS['fill_category'], reply_markup=get_kb(categories))
+        await message.answer(text=TEXTS['fill_category_with_kb'], reply_markup=get_kb(categories))
 
 
 @form_router.message(StateFilter(FSMFillForm.fill_category), F.text)
