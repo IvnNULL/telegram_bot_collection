@@ -1,3 +1,4 @@
+from aiogram.types import BufferedInputFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db import list_expenses
 from texts.texts import TEXTS
@@ -36,7 +37,17 @@ async def get_expenses_csv_text(session: AsyncSession) -> str:
             f'{expense.description};'
             f'{expense.amount};'
             f'{expense.payer}'
-
         )
 
     return '\n'.join(lines)
+
+
+def get_expenses_csv_file(csv_text: str):
+    file_bytes = csv_text.encode('utf-8-sig')
+
+    csv_file = BufferedInputFile(
+        file_bytes,
+        filename='expenses.csv'
+    )
+
+    return csv_file
