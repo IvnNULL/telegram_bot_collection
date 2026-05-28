@@ -8,7 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommandScopeDefault
 
 from config.config import load_config, Config
-from database.connection import create_db
+from database.connection import create_session_maker
 from handlers.form import form_router
 from handlers.user import user_router
 from keyboards.menu_button import DEFAULT_COMMANDS
@@ -36,7 +36,7 @@ async def main():
     bot = Bot(token=config.bot.token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher(storage=storage)
 
-    _, session_factory = create_db(config.db.url)
+    session_factory = create_session_maker(config.db.url)
 
     logger.info('Including routers...')
     dp.include_router(form_router)
