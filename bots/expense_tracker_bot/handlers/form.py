@@ -8,7 +8,7 @@ from aiogram.fsm.state import default_state
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
-from database.db import add_expense, add_payer, list_payers, add_place_category, get_category_by_place
+from database.repositories import ExpenseRepository, PayerRepository, PlaceCategoryRepository
 from keyboards.keyboards import get_save_form_kb, get_payers_kb, get_date_kb, get_kb
 from states.states import FSMFillForm
 from texts.texts import TEXTS
@@ -38,7 +38,9 @@ async def process_place_send(message: Message, state: FSMContext, session_factor
     await state.set_state(FSMFillForm.fill_category)
 
     async with session_factory() as session:
-        categories = await get_category_by_place(session, place=message.text)
+        place_cat_repo = PlaceCategoryRepository(session)
+        categories = await place_cat_repo.get_category_by_place(place=message.text)
+
     if categories is None:
         await message.answer(text=TEXTS['fill_category'])
     else:
@@ -72,7 +74,9 @@ async def process_amount_send(message: Message, state: FSMContext, session_facto
     await state.set_state(FSMFillForm.fill_payer)
 
     async with session_factory() as session:
-        payers = await list_payers(session)
+        payer_repo = PayerRepository(session)
+        payers = await payer_repo.list_payers()
+
     if payers is None:
         await message.answer(text=TEXTS['fill_payer'])
     else:
@@ -114,8 +118,11 @@ async def process_save_form(callback: CallbackQuery, state: FSMContext,
                             session_factory: async_sessionmaker[AsyncSession]):
     async with session_factory() as session:
         data = await state.get_data()
-        await add_expense(
-            session,
+        expense_repo = ExpenseRepository(session)
+        payer_repo = PayerRepository(session)
+        place_cat_repo = PlaceCategoryRepository(session)
+
+        await expense_repo.add_expense(
             user_id=callback.from_user.id,
             exp_date=data['date'],
             category=data['category'],
@@ -124,8 +131,8 @@ async def process_save_form(callback: CallbackQuery, state: FSMContext,
             amount=data['amount'],
             payer=data['payer']
         )
-        await add_payer(session, payer=data['payer'])
-        await add_place_category(session, place=data['place'], category=data['category'])
+        await payer_repo.add_payer(payer=data['payer'])
+        await place_cat_repo.add_place_category(place=data['place'], category=data['category'])
 
     await callback.message.edit_text(text=TEXTS['save_form'])
     await state.clear()

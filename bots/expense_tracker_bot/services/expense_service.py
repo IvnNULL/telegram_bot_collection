@@ -1,15 +1,9 @@
 from aiogram.types import BufferedInputFile
-from sqlalchemy.ext.asyncio import AsyncSession
-from database.db import list_expenses
-from texts.texts import TEXTS
+
+from database.models import Expense
 
 
-async def get_expenses_text(session: AsyncSession) -> str:
-    expenses = await list_expenses(session)
-
-    if expenses is None:
-        return TEXTS['no_expenses']
-
+def expenses_to_text(expenses: list[Expense]) -> str:
     text = ''
     previous_date = None
     for expense in expenses:
@@ -22,12 +16,7 @@ async def get_expenses_text(session: AsyncSession) -> str:
     return text
 
 
-async def get_expenses_csv_text(session: AsyncSession) -> str:
-    expenses = await list_expenses(session)
-
-    if expenses is None:
-        return TEXTS['no_expenses']
-
+def expenses_to_csv_text(expenses: list[Expense]) -> str:
     lines = []
     for expense in expenses:
         lines.append(
@@ -42,7 +31,7 @@ async def get_expenses_csv_text(session: AsyncSession) -> str:
     return '\n'.join(lines)
 
 
-def get_expenses_csv_file(csv_text: str):
+def text_to_csv_file(csv_text: str):
     file_bytes = csv_text.encode('utf-8-sig')
 
     csv_file = BufferedInputFile(
