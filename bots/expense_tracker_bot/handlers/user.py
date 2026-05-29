@@ -5,8 +5,8 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
-from database.db import clear_expenses
-from services.expense_service import get_expenses_text, get_expenses_csv_text, get_expenses_csv_file
+from database.repositories import ExpenseRepository
+from services.expense_service import expenses_to_text, expenses_to_csv_text, text_to_csv_file
 from texts.texts import TEXTS
 
 logger = logging.getLogger(__name__)
@@ -27,25 +27,31 @@ async def process_start_command(message: Message):
 @user_router.message(Command(commands='show'))
 async def process_show_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
     async with session_factory() as session:
-        text = await get_expenses_text(session)
+        expense_repo = ExpenseRepository(session)
+        expenses = await expense_repo.list_expenses()
+        text = expenses_to_text(expenses) if expenses else TEXTS['no_expenses']
     await message.answer(text=text)
 
 
 @user_router.message(Command(commands='show_csv'))
 async def process_show_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
     async with session_factory() as session:
-        text = await get_expenses_csv_text(session)
+        expense_repo = ExpenseRepository(session)
+        expenses = await expense_repo.list_expenses()
+
+        text = expenses_to_csv_text(expenses) if expenses else TEXTS['no_expenses']
     if len(text) < 4096:
         await message.answer(text=text)
     else:
-        csv_file = get_expenses_csv_file(text)
+        csv_file = text_to_csv_file(text)
         await message.answer_document(document=csv_file)
 
 
 @user_router.message(Command(commands='clear'))
 async def process_show_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
     async with session_factory() as session:
-        await clear_expenses(session)
+        expense_repo = ExpenseRepository(session)
+        await expense_repo.clear_expenses()
     await message.answer(text=TEXTS['/clear'])
 
 
