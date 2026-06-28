@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from database.models import PlaceCategory
 from database.repositories.base import BaseRepository
@@ -29,3 +29,12 @@ class PlaceCategoryRepository(BaseRepository):
         )
         categories = db_categories.all()
         return categories if categories else None
+
+    async def get_all_data(self) -> list[PlaceCategory]:
+        db_data = await self.session.scalars(select(PlaceCategory))
+        return db_data.all()
+
+    async def update(self, list_pc: list[PlaceCategory]) -> None:
+        await self.session.execute(delete(PlaceCategory))
+        self.session.add_all(list_pc)
+        await self.session.commit()

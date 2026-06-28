@@ -10,6 +10,7 @@ from aiogram.types import BotCommandScopeDefault
 from config.config import load_config, Config
 from database.connection import create_session_maker
 from handlers.form import form_router
+from handlers.place_categories import pc_router
 from handlers.user import user_router
 from keyboards.menu_button import DEFAULT_COMMANDS
 from middlewares.access import AccessMiddleware
@@ -40,6 +41,7 @@ async def main():
 
     logger.info('Including routers...')
     dp.include_router(form_router)
+    dp.include_router(pc_router)
     dp.include_router(user_router)
 
     logger.info('Including middlewares...')
