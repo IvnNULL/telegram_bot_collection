@@ -22,13 +22,13 @@ class PlaceCategoryRepository(BaseRepository):
 
         await self.session.commit()
 
-    async def get_category_by_place(self, *, place: str) -> list[str] | None:
+    async def get_category_by_place(self, *, place: str) -> list[str]:
         db_categories = await self.session.scalars(
             select(PlaceCategory.category).where(PlaceCategory.place == place).order_by(PlaceCategory.counter.desc())
             # .limit(3)
         )
         categories = db_categories.all()
-        return categories if categories else None
+        return categories
 
     async def get_all_data(self) -> list[PlaceCategory]:
         db_data = await self.session.scalars(select(PlaceCategory))

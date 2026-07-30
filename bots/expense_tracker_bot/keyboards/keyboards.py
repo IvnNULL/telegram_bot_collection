@@ -1,49 +1,35 @@
 from datetime import date, timedelta
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
-
-from database.models import Payer
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from texts.texts import TEXTS
 
 
-def get_save_form_kb() -> InlineKeyboardMarkup:
+def get_save_form_keyboard() -> InlineKeyboardMarkup:
     change_date_button = InlineKeyboardButton(text=TEXTS['change_date_button'], callback_data='change_date_form')
     save_button = InlineKeyboardButton(text=TEXTS['save_button'], callback_data='save_form')
     cancel_button = InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data='cancel_form')
-
     keyboard = [
         [save_button, cancel_button],
         [change_date_button],
     ]
-
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
-def get_payers_kb(payers: list[Payer]) -> ReplyKeyboardMarkup:
-    builder = ReplyKeyboardBuilder()
-    for payer in payers:
-        builder.add(KeyboardButton(text=payer.payer))
-    builder.adjust(3)
-
-    return builder.as_markup(resize_keyboard=True)
-
-
-def get_kb(texts: list[str], adjust: int = 3):
-    builder = ReplyKeyboardBuilder()
+def create_inline_keyboard(texts: list[str], data_prefix: str, adjust: int = 3) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
     for text in texts:
-        builder.add(KeyboardButton(text=text))
+        builder.button(text=text, callback_data=f'{data_prefix}{text}')
+    builder.adjust(adjust)
+    return builder.as_markup()
+
+
+def get_date_inline_keyboard(format_date: str, data_prefix: str, days: int = 3) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    current_date = date.today() - timedelta(days=days - 1)
+    for _ in range(days):
+        text_date = current_date.strftime(format_date)
+        builder.button(text=text_date, callback_data=f'{data_prefix}{text_date}')
+        current_date += timedelta(days=1)
     builder.adjust(3)
-
-    return builder.as_markup(resize_keyboard=True)
-
-
-def get_date_kb(format_date: str) -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        keyboard=[[
-            KeyboardButton(text=(date.today() - timedelta(days=2)).strftime(format_date)),
-            KeyboardButton(text=(date.today() - timedelta(days=1)).strftime(format_date)),
-            KeyboardButton(text=date.today().strftime(format_date)),
-        ]],
-        resize_keyboard=True
-    )
+    return builder.as_markup()

@@ -1,6 +1,6 @@
 import logging
 
-from aiogram import Router, Bot
+from aiogram import Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
@@ -15,12 +15,12 @@ user_router = Router()
 
 
 @user_router.message(CommandStart())
-async def process_start_command(message: Message, bot: Bot):
+async def process_start_command(message: Message):
     await message.answer(text=TEXTS['/start'])
 
 
 @user_router.message(Command(commands='help'))
-async def process_start_command(message: Message):
+async def process_help_command(message: Message):
     await message.answer(text=TEXTS['/help'])
 
 
@@ -34,7 +34,7 @@ async def process_show_command(message: Message, session_factory: async_sessionm
 
 
 @user_router.message(Command(commands='show_csv'))
-async def process_show_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
+async def process_show_csv_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
     async with session_factory() as session:
         expense_repo = ExpenseRepository(session)
         expenses = await expense_repo.list_expenses()
@@ -48,7 +48,7 @@ async def process_show_command(message: Message, session_factory: async_sessionm
 
 
 @user_router.message(Command(commands='clear'))
-async def process_show_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
+async def process_clear_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
     async with session_factory() as session:
         expense_repo = ExpenseRepository(session)
         await expense_repo.clear_expenses()
