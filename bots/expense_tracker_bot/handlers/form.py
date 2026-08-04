@@ -116,10 +116,9 @@ async def process_add_command(message: Message, state: FSMContext):
 
 
 @form_router.message(StateFilter(FSMFillForm.fill_place), F.text)
-async def process_place_send(message: Message, state: FSMContext, session_factory: async_sessionmaker[AsyncSession]):
-    async with session_factory() as session:
-        place_cat_repo = PlaceCategoryRepository(session)
-        categories = await place_cat_repo.get_category_by_place(place=message.text)
+async def process_place_send(message: Message, state: FSMContext, session: AsyncSession):
+    place_cat_repo = PlaceCategoryRepository(session)
+    categories = await place_cat_repo.get_category_by_place(place=message.text)
 
     await proceed_to_next_step(
         event=message,
@@ -171,7 +170,7 @@ async def process_description_send(message: Message, state: FSMContext):
 
 
 @form_router.message(StateFilter(FSMFillForm.fill_amount), F.text)
-async def process_amount_send(message: Message, state: FSMContext, session_factory: async_sessionmaker[AsyncSession]):
+async def process_amount_send(message: Message, state: FSMContext, session: AsyncSession):
     try:
         amount = int(float(message.text.replace(',', '.').replace(' ', '')))
     except ValueError:
@@ -179,9 +178,8 @@ async def process_amount_send(message: Message, state: FSMContext, session_facto
         await update_state_message(message, state, text=TEXTS['fill_amount_error'])
         return
 
-    async with session_factory() as session:
-        payer_repo = PayerRepository(session)
-        payers = await payer_repo.list_payers()
+    payer_repo = PayerRepository(session)
+    payers = await payer_repo.list_payers()
 
     await proceed_to_next_step(
         event=message,
@@ -279,19 +277,16 @@ async def process_date_click(callback: CallbackQuery, state: FSMContext):
 
 
 @form_router.callback_query(StateFilter(FSMFillForm.save_form), F.data == 'save_form')
-async def process_save_form_click(
-    callback: CallbackQuery, state: FSMContext, session_factory: async_sessionmaker[AsyncSession]
-):
-    async with session_factory() as session:
-        data = await state.get_data()
-        expense_repo = ExpenseRepository(session)
-        payer_repo = PayerRepository(session)
-        place_cat_repo = PlaceCategoryRepository(session)
+async def process_save_form_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    data = await state.get_data()
+    expense_repo = ExpenseRepository(session)
+    payer_repo = PayerRepository(session)
+    place_cat_repo = PlaceCategoryRepository(session)
 
-        expense_data = data['expense_data']
-        await expense_repo.add_expense(user_id=callback.from_user.id, **expense_data)
-        await payer_repo.add_payer(payer=expense_data['payer'])
-        await place_cat_repo.add_place_category(place=expense_data['place'], category=expense_data['category'])
+    expense_data = data['expense_data']
+    await expense_repo.add_expense(user_id=callback.from_user.id, **expense_data)
+    await payer_repo.add_payer(payer=expense_data['payer'])
+    await place_cat_repo.add_place_category(place=expense_data['place'], category=expense_data['category'])
 
     await callback.message.edit_text(text=TEXTS['save_form'])
 

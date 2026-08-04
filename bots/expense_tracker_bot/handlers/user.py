@@ -25,21 +25,19 @@ async def process_help_command(message: Message):
 
 
 @user_router.message(Command(commands='show'))
-async def process_show_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
-    async with session_factory() as session:
-        expense_repo = ExpenseRepository(session)
-        expenses = await expense_repo.list_expenses()
-        text = expenses_to_text(expenses) if expenses else TEXTS['no_expenses']
+async def process_show_command(message: Message, session: AsyncSession):
+    expense_repo = ExpenseRepository(session)
+    expenses = await expense_repo.list_expenses()
+    text = expenses_to_text(expenses) if expenses else TEXTS['no_expenses']
     await message.answer(text=text)
 
 
 @user_router.message(Command(commands='show_csv'))
-async def process_show_csv_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
-    async with session_factory() as session:
-        expense_repo = ExpenseRepository(session)
-        expenses = await expense_repo.list_expenses()
+async def process_show_csv_command(message: Message, session: AsyncSession):
+    expense_repo = ExpenseRepository(session)
+    expenses = await expense_repo.list_expenses()
 
-        text = expenses_to_csv_text(expenses) if expenses else TEXTS['no_expenses']
+    text = expenses_to_csv_text(expenses) if expenses else TEXTS['no_expenses']
     if len(text) < 4096:
         await message.answer(text=text)
     else:
@@ -48,10 +46,9 @@ async def process_show_csv_command(message: Message, session_factory: async_sess
 
 
 @user_router.message(Command(commands='clear'))
-async def process_clear_command(message: Message, session_factory: async_sessionmaker[AsyncSession]):
-    async with session_factory() as session:
-        expense_repo = ExpenseRepository(session)
-        await expense_repo.clear_expenses()
+async def process_clear_command(message: Message, session: AsyncSession):
+    expense_repo = ExpenseRepository(session)
+    await expense_repo.clear_expenses()
     await message.answer(text=TEXTS['/clear'])
 
 
