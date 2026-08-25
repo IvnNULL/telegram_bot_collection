@@ -10,7 +10,7 @@ from aiogram.fsm.state import State, default_state
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 from database.repositories import ExpenseRepository, PayerRepository, PlaceCategoryRepository
 from keyboards.keyboards import create_inline_keyboard, get_date_inline_keyboard, get_save_form_keyboard
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 from states.states import FSMFillForm
 from texts.texts import TEXTS
 
@@ -85,7 +85,11 @@ async def proceed_to_next_step(
 @form_router.message(StateFilter(FSMFillForm), Command(commands='cancel'))
 @form_router.callback_query(StateFilter(FSMFillForm.save_form), F.data == 'cancel_form')
 async def process_cancel_command(event: Message | CallbackQuery, state: FSMContext):
-    message = event.message if isinstance(event, CallbackQuery) else event
+    if isinstance(event, Message):
+        await event.delete()
+        message = event
+    else:
+        message = event.message
 
     data = await state.get_data()
     message_ids = [data.get('start_message_id'), data.get('expense_message_id')]
@@ -113,6 +117,11 @@ async def process_add_command(message: Message, state: FSMContext):
         next_state=FSMFillForm.fill_place,
         next_text=TEXTS['fill_place'],
     )
+
+
+@form_router.message(StateFilter(FSMFillForm), F.text.startswith('/'))
+async def process_other_command(message: Message):
+    await message.delete()
 
 
 @form_router.message(StateFilter(FSMFillForm.fill_place), F.text)
