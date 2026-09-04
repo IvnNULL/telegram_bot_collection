@@ -60,6 +60,33 @@ async def process_cancel_click(callback: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
+@edit_router.callback_query(StateFilter(FSMEditExpense), F.data == 'pass')
+async def process_pass_click(callback: CallbackQuery):
+    await callback.answer()
+
+
+@edit_router.callback_query(StateFilter(FSMEditExpense.browsing), F.data.startswith('move:'))
+async def process_move_click(callback: CallbackQuery, state: FSMContext):
+    step = int(callback.data.split(':')[-1])
+    data = await state.get_data()
+    current_page = data['current_page']
+    total_pages = data['total_pages']
+
+    new_page = current_page + step
+    if not 1 <= new_page <= total_pages:
+        return callback.answer()
+
+    await state.update_data(current_page=new_page)
+    await callback.message.edit_reply_markup(
+        reply_markup=get_expenses_keyboard(
+            data['expenses_buttons'][new_page - 1],
+            new_page,
+            data['total_pages'],
+            date.fromisoformat(data['date']),
+        ),
+    )
+
+
 @edit_router.callback_query(StateFilter(FSMEditExpense))
 async def process_click(callback: CallbackQuery):
     await callback.answer()
