@@ -13,3 +13,4 @@ class FSMFillForm(StatesGroup):
 
 class FSMEditExpense(StatesGroup):
     browsing = State()
+    changing_date = State()
