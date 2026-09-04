@@ -9,3 +9,7 @@ class FSMFillForm(StatesGroup):
     fill_payer = State()
     save_form = State()
     change_date = State()
+
+
+class FSMEditExpense(StatesGroup):
+    browsing = State()
