@@ -17,6 +17,19 @@ def expenses_to_text(expenses: list[Expense]) -> str:
     return text
 
 
+def expense_to_text(expense: Expense) -> str:
+    expense_data = expense.date.strftime(TEXTS['DATE_FORMAT'])
+    expense_amount = f'{expense.amount:_}'.replace('_', ' ')
+    return (
+        f'Дата: {expense_data}\n'
+        f'Место: {expense.place}\n'
+        f'Категория: {expense.category}\n'
+        f'Описание: {expense.description}\n'
+        f'Сумма: {expense_amount}\n'
+        f'Плательщик: {expense.payer}'
+    )
+
+
 def expenses_to_csv_text(expenses: list[Expense]) -> str:
     lines = []
     for expense in expenses:

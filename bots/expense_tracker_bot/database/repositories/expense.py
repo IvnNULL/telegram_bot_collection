@@ -51,6 +51,14 @@ class ExpenseRepository(BaseRepository):
         expenses = data.all()
         return expenses
 
+    async def get_expense_by_id(self, expense_id: int) -> Expense:
+        data = await self.session.scalar(select(Expense).where(Expense.id == expense_id))
+        return data
+
+    async def delete_expense_by_id(self, expense_id: int) -> None:
+        await self.session.execute(delete(Expense).where(Expense.id == expense_id))
+        await self.session.commit()
+
     async def clear_expenses(self) -> None:
         await self.session.execute(delete(Expense))
         await self.session.commit()

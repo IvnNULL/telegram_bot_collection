@@ -6,10 +6,10 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from database.repositories import ExpenseRepository
 from keyboards.keyboards import get_date_keyboard, get_expenses_keyboard
-from services.expense_service import prepare_edit_data
+from services.expense_service import expense_to_text, prepare_edit_data
 from sqlalchemy.ext.asyncio import AsyncSession
 from states.states import FSMEditExpense
 from texts.texts import TEXTS
@@ -100,7 +100,7 @@ async def process_change_date_click(callback: CallbackQuery, state: FSMContext):
     )
 
 
-@edit_router.callback_query(StateFilter(FSMEditExpense.changing_date), F.data.startswith('select_date'))
+@edit_router.callback_query(StateFilter(FSMEditExpense.changing_date), F.data.startswith('select_date:'))
 async def process_date_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
     new_date = datetime.strptime(callback.data.split(':')[-1], TEXTS['DATE_FORMAT']).date()
     current_date = date.fromisoformat(await state.get_value('date'))
@@ -163,9 +163,53 @@ async def process_date_send(message: Message, state: FSMContext, session: AsyncS
     )
 
 
-@edit_router.callback_query(StateFilter(FSMEditExpense))
-async def process_click(callback: CallbackQuery):
-    await callback.answer()
+@edit_router.callback_query(StateFilter(FSMEditExpense.browsing), F.data.startswith('select:'))
+async def process_expense_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    if callback.data == 'select:pass':
+        return callback.answer()
+
+    current_index = int(callback.data.split(':')[-1])
+    await state.update_data(current_index=current_index)
+
+    expenses_ids = await state.get_value('expenses_ids')
+    expense_id = expenses_ids[current_index]
+    expense_repo = ExpenseRepository(session)
+    expense = await expense_repo.get_expense_by_id(expense_id)
+
+    await callback.message.edit_text(
+        text=expense_to_text(expense),
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text=TEXTS['delete_button'], callback_data='expense_menu:delete'),
+                    InlineKeyboardButton(text=TEXTS['return_button'], callback_data='expense_menu:return'),
+                ]
+            ]
+        ),
+    )
+
+
+@edit_router.callback_query(StateFilter(FSMEditExpense.browsing), F.data.startswith('expense_menu:'))
+async def process_expense_menu_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    data = await state.get_data()
+    if callback.data == 'expense_menu:delete':
+        expense_id = data['expenses_ids'][data['current_index']]
+        expense_repo = ExpenseRepository(session)
+        await expense_repo.delete_expense_by_id(expense_id)
+        await callback.message.edit_reply_markup(reply_markup=None)
+        await callback.message.answer(text=TEXTS['edit_success_delete'])
+        await state.clear()
+    elif callback.data == 'expense_menu:return':
+        await state.update_data(current_index=None)
+        await callback.message.edit_text(
+            text=TEXTS['edit_start'],
+            reply_markup=get_expenses_keyboard(
+                data['expenses_buttons'][data['current_page'] - 1],
+                data['current_page'],
+                data['total_pages'],
+                date.fromisoformat(data['date']),
+            ),
+        )
 
 
 @edit_router.message(StateFilter(FSMEditExpense))
