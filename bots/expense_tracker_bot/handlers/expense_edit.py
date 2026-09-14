@@ -8,6 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from database.repositories import ExpenseRepository
+from handlers.main_menu import send_main_menu
 from keyboards.keyboards import get_date_keyboard, get_expenses_keyboard
 from services.expense_service import expense_to_text, prepare_edit_data
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,9 +20,7 @@ logger = logging.getLogger(__name__)
 edit_router = Router()
 
 
-@edit_router.message(StateFilter(default_state), Command(commands='edit'))
-async def process_edit_command(message: Message, state: FSMContext, session: AsyncSession):
-    await message.delete()
+async def start_edit_expense(message: Message, state: FSMContext, session: AsyncSession):
     await state.set_state(FSMEditExpense.browsing)
 
     expense_repo = ExpenseRepository(session)
@@ -43,6 +42,23 @@ async def process_edit_command(message: Message, state: FSMContext, session: Asy
     await state.update_data(main_message_id=main_message_id.message_id, date=latest_date.isoformat(), **data)
 
 
+@edit_router.message(StateFilter(default_state), Command(commands='edit'))
+async def process_edit_command(message: Message, state: FSMContext, session: AsyncSession):
+    await message.delete()
+    await start_edit_expense(message, state, session)
+
+
+@edit_router.callback_query(StateFilter(default_state), F.data == 'expense:edit')
+async def process_edit_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    await callback.answer()
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:
+        pass
+
+    await start_edit_expense(callback.message, state, session)
+
+
 @edit_router.message(StateFilter(FSMEditExpense), Command('cancel'))
 async def process_cancel_command(message: Message, state: FSMContext):
     await message.delete()
@@ -58,6 +74,7 @@ async def process_cancel_command(message: Message, state: FSMContext):
 async def process_cancel_click(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await state.clear()
+    await send_main_menu(callback.message)
 
 
 @edit_router.callback_query(StateFilter(FSMEditExpense), F.data == 'pass')

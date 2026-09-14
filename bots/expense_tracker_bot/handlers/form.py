@@ -30,6 +30,20 @@ def get_expense_text(expense_dict: dict) -> str:
     )
 
 
+async def start_add_expense(message: Message, state: FSMContext):
+    start_message = await message.answer(text=TEXTS['fill_start'])
+    await state.update_data(start_message_id=start_message.message_id)
+
+    await proceed_to_next_step(
+        event=message,
+        state=state,
+        expense_field='exp_date',
+        expense_value=date.today(),
+        next_state=FSMFillForm.fill_place,
+        next_text=TEXTS['fill_place'],
+    )
+
+
 async def update_expense_message(message: Message, state: FSMContext):
     data = await state.get_data()
     expense_text = get_expense_text(data.get('expense_data', {}))
@@ -106,17 +120,13 @@ async def process_cancel_command(event: Message | CallbackQuery, state: FSMConte
 
 @form_router.message(StateFilter(default_state), Command(commands='add'))
 async def process_add_command(message: Message, state: FSMContext):
-    start_message = await message.answer(text=TEXTS['fill_start'])
-    await state.update_data(start_message_id=start_message.message_id)
+    await start_add_expense(message, state)
 
-    await proceed_to_next_step(
-        event=message,
-        state=state,
-        expense_field='exp_date',
-        expense_value=date.today(),
-        next_state=FSMFillForm.fill_place,
-        next_text=TEXTS['fill_place'],
-    )
+
+@form_router.callback_query(StateFilter(default_state), F.data == 'expense:add')
+async def process_edit_click(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await start_add_expense(callback.message, state)
 
 
 @form_router.message(StateFilter(FSMFillForm), F.text.startswith('/'))

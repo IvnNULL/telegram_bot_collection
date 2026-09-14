@@ -6,10 +6,12 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommandScopeDefault
+
 from config.config import Config, load_config
 from database.connection import create_session_maker
 from handlers.expense_edit import edit_router
 from handlers.form import form_router
+from handlers.main_menu import menu_router
 from handlers.place_categories import pc_router
 from handlers.user import user_router
 from keyboards.menu_button import DEFAULT_COMMANDS
@@ -49,6 +51,7 @@ async def main():
     dp.include_router(form_router)
     dp.include_router(edit_router)
     dp.include_router(pc_router)
+    dp.include_router(menu_router)
     dp.include_router(user_router)
 
     dp.startup.register(on_startup)

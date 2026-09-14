@@ -61,3 +61,14 @@ def get_expenses_keyboard(
     )
     builder.row(InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data='cancel'))
     return builder.as_markup()
+
+
+def get_main_menu_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
+    builder.button(text=TEXTS['main_menu:expense:add'], callback_data='expense:add')
+    builder.button(text=TEXTS['main_menu:expense:edit'], callback_data='expense:edit')
+    # builder.button(text=TEXTS['main_menu:expense:show'], callback_data='expense:show')
+
+    builder.adjust(1)
+    return builder.as_markup()
