@@ -9,6 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, default_state
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 from database.repositories import ExpenseRepository, PayerRepository, PlaceCategoryRepository
+from handlers.main_menu import send_main_menu
 from keyboards.keyboards import create_inline_keyboard, get_date_inline_keyboard, get_save_form_keyboard
 from sqlalchemy.ext.asyncio import AsyncSession
 from states.states import FSMFillForm
@@ -116,6 +117,7 @@ async def process_cancel_command(event: Message | CallbackQuery, state: FSMConte
 
     await update_state_message(message, state, text=TEXTS['cancel_form'])
     await state.clear()
+    await send_main_menu(message)
 
 
 @form_router.message(StateFilter(default_state), Command(commands='add'))
@@ -124,7 +126,7 @@ async def process_add_command(message: Message, state: FSMContext):
 
 
 @form_router.callback_query(StateFilter(default_state), F.data == 'expense:add')
-async def process_edit_click(callback: CallbackQuery, state: FSMContext):
+async def process_add_click(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await start_add_expense(callback.message, state)
 
@@ -318,6 +320,7 @@ async def process_save_form_click(callback: CallbackQuery, state: FSMContext, se
             logger.error(e)
 
     await state.clear()
+    await send_main_menu(callback.message)
 
 
 @form_router.message(StateFilter(FSMFillForm))

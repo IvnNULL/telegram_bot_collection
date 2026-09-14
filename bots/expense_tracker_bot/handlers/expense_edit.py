@@ -7,11 +7,12 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from database.repositories import ExpenseRepository
 from handlers.main_menu import send_main_menu
 from keyboards.keyboards import get_date_keyboard, get_expenses_keyboard
 from services.expense_service import expense_to_text, prepare_edit_data
-from sqlalchemy.ext.asyncio import AsyncSession
 from states.states import FSMEditExpense
 from texts.texts import TEXTS
 
@@ -68,6 +69,7 @@ async def process_cancel_command(message: Message, state: FSMContext):
     except TelegramBadRequest as e:
         logger.error(e)
     await state.clear()
+    await send_main_menu(message)
 
 
 @edit_router.callback_query(StateFilter(FSMEditExpense), F.data == 'cancel')
@@ -216,6 +218,7 @@ async def process_expense_menu_click(callback: CallbackQuery, state: FSMContext,
         await callback.message.edit_reply_markup(reply_markup=None)
         await callback.message.answer(text=TEXTS['edit_success_delete'])
         await state.clear()
+        await send_main_menu(callback.message)
     elif callback.data == 'expense_menu:return':
         await state.update_data(current_index=None)
         await callback.message.edit_text(
