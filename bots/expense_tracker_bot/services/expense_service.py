@@ -52,6 +52,18 @@ def text_to_csv_file(csv_text: str):
     return csv_file
 
 
+def expense_dump(expense: Expense) -> dict:
+    return {
+        'id': expense.id,
+        'date': expense.date,
+        'category': expense.category,
+        'place': expense.place,
+        'description': expense.description,
+        'amount': expense.amount,
+        'payer': expense.payer,
+    }
+
+
 def prepare_edit_data(expenses: list[Expense]):
     page_size = 7
     sep = ' | '

@@ -1,7 +1,7 @@
 from aiogram.fsm.state import State, StatesGroup
 
 
-class ExpenseSteps(StatesGroup):
+class ExpenseAddSteps(StatesGroup):
     waiting_for_place = State()
     waiting_for_category = State()
     waiting_for_description = State()
@@ -12,6 +12,6 @@ class ExpenseSteps(StatesGroup):
     waiting_for_confirmation = State()
 
 
-class FSMEditExpense(StatesGroup):
+class ExpenseEditSteps(StatesGroup):
     browsing = State()
     changing_date = State()

@@ -34,33 +34,30 @@ def get_add_confirmation_kb() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def get_date_keyboard(start_date: date, days: int = 3, prefix: str = '') -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    button_date = start_date - timedelta(days=1)
-    for _ in range(days):
-        button_date += timedelta(days=1)
-        button_date_text = button_date.strftime(TEXTS['DATE_FORMAT'])
-        builder.add(InlineKeyboardButton(text=button_date_text, callback_data=f'{prefix}{button_date_text}'))
-    return builder.as_markup()
-
-
-def get_expenses_keyboard(
+def get_browsing_kb(
     expense_buttons: list[dict], current_page: int, total_pages: int, current_date: date
 ) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     for button in expense_buttons:
-        builder.row(InlineKeyboardButton(text=button['text'], callback_data=f'select:{button["index"]}'))
+        builder.row(InlineKeyboardButton(text=button['text'], callback_data=f'expense:select:{button["index"]}'))
 
-    builder.row(InlineKeyboardButton(text=current_date.strftime(TEXTS['DATE_FORMAT']), callback_data='change_date'))
     builder.row(
-        InlineKeyboardButton(text='<', callback_data='move:-1'),
-        InlineKeyboardButton(text=f'{current_page}/{total_pages}', callback_data='pass'),
-        InlineKeyboardButton(text='>', callback_data='move:+1'),
+        InlineKeyboardButton(text=current_date.strftime(TEXTS['DATE_FORMAT']), callback_data='expense:change:date')
     )
-    builder.row(InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data='cancel'))
+    builder.row(
+        InlineKeyboardButton(text='<', callback_data='expense:move:-1'),
+        InlineKeyboardButton(text=f'{current_page}/{total_pages}', callback_data='expense:pass'),
+        InlineKeyboardButton(text='>', callback_data='expense:move:+1'),
+    )
+    builder.row(InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data='expense:cancel'))
     return builder.as_markup()
 
+def get_action_kb():
+    builder = InlineKeyboardBuilder()
+    builder.button(text=TEXTS['delete_button'], callback_data=ExpenseCallback(action='delete').pack())
+    builder.button(text=TEXTS['return_button'], callback_data=ExpenseCallback(action='return').pack())
+    return builder.as_markup()
 
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()

@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.repositories import ExpenseRepository, PayerRepository, PlaceCategoryRepository
 from keyboards.callbacks import ExpenseCallback
 from keyboards.keyboards import get_add_confirmation_kb, get_suggestions_kb, get_date_suggestions_kb
-from states.states import ExpenseSteps
+from states.states import ExpenseAddSteps
 from texts.texts import TEXTS
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ async def start_add_expense(message: Message, state: FSMContext):
         state=state,
         expense_field='exp_date',
         expense_value=date.today(),
-        next_state=ExpenseSteps.waiting_for_place,
+        next_state=ExpenseAddSteps.waiting_for_place,
         next_text=TEXTS['fill_place'],
     )
 
@@ -138,24 +138,24 @@ async def process_add_click(callback: CallbackQuery, state: FSMContext):
     await start_add_expense(callback.message, state)
 
 
-@expense_add_router.message(StateFilter(ExpenseSteps), Command(commands='cancel'))
+@expense_add_router.message(StateFilter(ExpenseAddSteps), Command(commands='cancel'))
 async def process_cancel_command(message: Message, state: FSMContext):
     await message.delete()
     await stop_add_expense(message, state)
 
 
-@expense_add_router.callback_query(StateFilter(ExpenseSteps), ExpenseCallback.filter(F.action == 'cancel'))
+@expense_add_router.callback_query(StateFilter(ExpenseAddSteps), ExpenseCallback.filter(F.action == 'cancel'))
 async def process_cancel_click(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     await stop_add_expense(callback.message, state)
 
 
-@expense_add_router.message(StateFilter(ExpenseSteps), F.text.startswith('/'))
+@expense_add_router.message(StateFilter(ExpenseAddSteps), F.text.startswith('/'))
 async def process_unexpected_command(message: Message):
     await message.delete()
 
 
-@expense_add_router.message(ExpenseSteps.waiting_for_place, F.text)
+@expense_add_router.message(ExpenseAddSteps.waiting_for_place, F.text)
 async def process_place_input(message: Message, state: FSMContext, session: AsyncSession):
     await message.delete()
     place_cat_repo = PlaceCategoryRepository(session)
@@ -166,13 +166,13 @@ async def process_place_input(message: Message, state: FSMContext, session: Asyn
         state=state,
         expense_field='place',
         expense_value=message.text,
-        next_state=ExpenseSteps.waiting_for_category,
+        next_state=ExpenseAddSteps.waiting_for_category,
         next_text=TEXTS['fill_category'],
         reply_markup=get_suggestions_kb('select', categories),
     )
 
 
-@expense_add_router.message(ExpenseSteps.waiting_for_category, F.text)
+@expense_add_router.message(ExpenseAddSteps.waiting_for_category, F.text)
 async def process_category_input(message: Message, state: FSMContext):
     await message.delete()
     await proceed_to_next_step(
@@ -180,24 +180,24 @@ async def process_category_input(message: Message, state: FSMContext):
         state=state,
         expense_field='category',
         expense_value=message.text,
-        next_state=ExpenseSteps.waiting_for_description,
+        next_state=ExpenseAddSteps.waiting_for_description,
         next_text=TEXTS['fill_description'],
     )
 
 
-@expense_add_router.callback_query(ExpenseSteps.waiting_for_category, ExpenseCallback.filter(F.action == 'select'))
+@expense_add_router.callback_query(ExpenseAddSteps.waiting_for_category, ExpenseCallback.filter(F.action == 'select'))
 async def process_category_select(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
     await proceed_to_next_step(
         message=callback.message,
         state=state,
         expense_field='category',
         expense_value=callback_data.value,
-        next_state=ExpenseSteps.waiting_for_description,
+        next_state=ExpenseAddSteps.waiting_for_description,
         next_text=TEXTS['fill_description'],
     )
 
 
-@expense_add_router.message(ExpenseSteps.waiting_for_description, F.text)
+@expense_add_router.message(ExpenseAddSteps.waiting_for_description, F.text)
 async def process_description_input(message: Message, state: FSMContext):
     await message.delete()
     await proceed_to_next_step(
@@ -205,12 +205,12 @@ async def process_description_input(message: Message, state: FSMContext):
         state=state,
         expense_field='description',
         expense_value=message.text,
-        next_state=ExpenseSteps.waiting_for_amount,
+        next_state=ExpenseAddSteps.waiting_for_amount,
         next_text=TEXTS['fill_amount'],
     )
 
 
-@expense_add_router.message(ExpenseSteps.waiting_for_amount, F.text)
+@expense_add_router.message(ExpenseAddSteps.waiting_for_amount, F.text)
 async def process_amount_input(message: Message, state: FSMContext, session: AsyncSession):
     await message.delete()
     try:
@@ -227,13 +227,13 @@ async def process_amount_input(message: Message, state: FSMContext, session: Asy
         state=state,
         expense_field='amount',
         expense_value=amount,
-        next_state=ExpenseSteps.waiting_for_payer,
+        next_state=ExpenseAddSteps.waiting_for_payer,
         next_text=TEXTS['fill_payer'],
         reply_markup=get_suggestions_kb('select', payers),
     )
 
 
-@expense_add_router.message(ExpenseSteps.waiting_for_payer, F.text)
+@expense_add_router.message(ExpenseAddSteps.waiting_for_payer, F.text)
 async def process_payer_input(message: Message, state: FSMContext):
     await message.delete()
     await proceed_to_next_step(
@@ -241,30 +241,30 @@ async def process_payer_input(message: Message, state: FSMContext):
         state=state,
         expense_field='payer',
         expense_value=message.text,
-        next_state=ExpenseSteps.waiting_for_confirmation,
+        next_state=ExpenseAddSteps.waiting_for_confirmation,
         next_text=TEXTS['check_form'],
         reply_markup=get_add_confirmation_kb(),
     )
 
 
-@expense_add_router.callback_query(ExpenseSteps.waiting_for_payer, ExpenseCallback.filter(F.action == 'select'))
+@expense_add_router.callback_query(ExpenseAddSteps.waiting_for_payer, ExpenseCallback.filter(F.action == 'select'))
 async def process_payer_select(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
     await proceed_to_next_step(
         message=callback.message,
         state=state,
         expense_field='payer',
         expense_value=callback_data.value,
-        next_state=ExpenseSteps.waiting_for_confirmation,
+        next_state=ExpenseAddSteps.waiting_for_confirmation,
         next_text=TEXTS['check_form'],
         reply_markup=get_add_confirmation_kb(),
     )
 
 
 @expense_add_router.callback_query(
-    ExpenseSteps.waiting_for_confirmation, ExpenseCallback.filter((F.action == 'change') & (F.value == 'date'))
+    ExpenseAddSteps.waiting_for_confirmation, ExpenseCallback.filter((F.action == 'change') & (F.value == 'date'))
 )
 async def process_change_date_click(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(ExpenseSteps.waiting_for_date)
+    await state.set_state(ExpenseAddSteps.waiting_for_date)
     await update_step_message(
         message=callback.message,
         state=state,
@@ -273,7 +273,7 @@ async def process_change_date_click(callback: CallbackQuery, state: FSMContext):
     )
 
 
-@expense_add_router.message(ExpenseSteps.waiting_for_date, F.text)
+@expense_add_router.message(ExpenseAddSteps.waiting_for_date, F.text)
 async def process_date_input(message: Message, state: FSMContext):
     await message.delete()
     try:
@@ -292,13 +292,13 @@ async def process_date_input(message: Message, state: FSMContext):
         state=state,
         expense_field='exp_date',
         expense_value=new_date,
-        next_state=ExpenseSteps.waiting_for_confirmation,
+        next_state=ExpenseAddSteps.waiting_for_confirmation,
         next_text=TEXTS['check_form'],
         reply_markup=get_add_confirmation_kb(),
     )
 
 
-@expense_add_router.callback_query(ExpenseSteps.waiting_for_date, ExpenseCallback.filter(F.action == 'select'))
+@expense_add_router.callback_query(ExpenseAddSteps.waiting_for_date, ExpenseCallback.filter(F.action == 'select'))
 async def process_date_select(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
     new_date = datetime.strptime(callback_data.value, TEXTS['DATE_FORMAT']).date()
 
@@ -307,13 +307,13 @@ async def process_date_select(callback: CallbackQuery, callback_data: ExpenseCal
         state=state,
         expense_field='exp_date',
         expense_value=new_date,
-        next_state=ExpenseSteps.waiting_for_confirmation,
+        next_state=ExpenseAddSteps.waiting_for_confirmation,
         next_text=TEXTS['check_form'],
         reply_markup=get_add_confirmation_kb(),
     )
 
 
-@expense_add_router.callback_query(ExpenseSteps.waiting_for_confirmation, ExpenseCallback.filter(F.action == 'save'))
+@expense_add_router.callback_query(ExpenseAddSteps.waiting_for_confirmation, ExpenseCallback.filter(F.action == 'save'))
 async def process_confirm_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
     data = await state.get_data()
     expense_repo = ExpenseRepository(session)
@@ -345,7 +345,7 @@ async def process_confirm_click(callback: CallbackQuery, state: FSMContext, sess
     await state.clear()
 
 
-@expense_add_router.message(StateFilter(ExpenseSteps))
+@expense_add_router.message(StateFilter(ExpenseAddSteps))
 async def process_unexpected_send(message: Message):
     # await message.answer(text=TEXTS['fill_wrong'])
     await message.delete()
