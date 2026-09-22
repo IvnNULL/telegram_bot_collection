@@ -2,36 +2,35 @@ from datetime import date, timedelta
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+from keyboards.callbacks import ExpenseCallback
 from texts.texts import TEXTS
 
 
-def get_save_form_keyboard() -> InlineKeyboardMarkup:
-    change_date_button = InlineKeyboardButton(text=TEXTS['change_date_button'], callback_data='change_date_form')
-    save_button = InlineKeyboardButton(text=TEXTS['save_button'], callback_data='save_form')
-    cancel_button = InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data='cancel_form')
-    keyboard = [
-        [save_button, cancel_button],
-        [change_date_button],
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-
-def create_inline_keyboard(texts: list[str], data_prefix: str, adjust: int = 3) -> InlineKeyboardMarkup:
+def get_suggestions_kb(action: str, values: list[str]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    for text in texts:
-        builder.button(text=text, callback_data=f'{data_prefix}{text}')
-    builder.adjust(adjust)
+    for value in values:
+        builder.button(text=value, callback_data=ExpenseCallback(action=action, value=value).pack())
+    builder.adjust(3)
     return builder.as_markup()
 
 
-def get_date_inline_keyboard(format_date: str, data_prefix: str, days: int = 3) -> InlineKeyboardMarkup:
+def get_date_suggestions_kb(last_date: date, days: int = 3) -> InlineKeyboardMarkup:
+    dates = [(last_date - timedelta(i)).strftime('%d.%m.%Y') for i in range(days - 1, -1, -1)]
+    return get_suggestions_kb(action='select', values=dates)
+
+
+def get_add_confirmation_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    current_date = date.today() - timedelta(days=days - 1)
-    for _ in range(days):
-        text_date = current_date.strftime(format_date)
-        builder.button(text=text_date, callback_data=f'{data_prefix}{text_date}')
-        current_date += timedelta(days=1)
-    builder.adjust(3)
+    builder.row(
+        InlineKeyboardButton(text=TEXTS['save_button'], callback_data=ExpenseCallback(action='save').pack()),
+        InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data=ExpenseCallback(action='cancel').pack()),
+    )
+    builder.row(
+        InlineKeyboardButton(
+            text=TEXTS['change_date_button'], callback_data=ExpenseCallback(action='change', value='date').pack()
+        )
+    )
     return builder.as_markup()
 
 

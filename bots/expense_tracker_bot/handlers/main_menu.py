@@ -22,7 +22,7 @@ async def process_edit_click(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.answer()
     try:
-        await callback.message.delete_reply_markup()
+        await callback.message.delete()
     except TelegramBadRequest:
         pass
 

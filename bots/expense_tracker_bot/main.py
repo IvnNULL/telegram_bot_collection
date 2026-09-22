@@ -10,7 +10,7 @@ from aiogram.types import BotCommandScopeDefault
 from config.config import Config, load_config
 from database.connection import create_session_maker
 from handlers.expense_edit import edit_router
-from handlers.form import form_router
+from handlers.expense_add import expense_add_router
 from handlers.main_menu import menu_router
 from handlers.place_categories import pc_router
 from handlers.user import user_router
@@ -48,7 +48,7 @@ async def main():
     dp.update.middleware(DatabaseMiddleware(session_factory))
 
     logger.info('Including routers...')
-    dp.include_router(form_router)
+    dp.include_router(expense_add_router)
     dp.include_router(edit_router)
     dp.include_router(pc_router)
     dp.include_router(menu_router)
