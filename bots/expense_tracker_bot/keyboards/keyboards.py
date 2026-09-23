@@ -34,6 +34,14 @@ def get_add_confirmation_kb() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def get_delete_confirmation_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text=TEXTS['confirm_deletion_button'], callback_data=ExpenseCallback(action='confirm').pack())
+    builder.button(text=TEXTS['cancel_button'], callback_data=ExpenseCallback(action='cancel').pack())
+    builder.adjust(1)
+    return builder.as_markup()
+
+
 def get_browsing_kb(
     expense_buttons: list[dict], current_page: int, total_pages: int, current_date: date
 ) -> InlineKeyboardMarkup:

@@ -48,6 +48,7 @@ TEXTS = {
     'cancel_button': 'Отмена',
     'return_button': 'Назад',
     'delete_button': 'Удалить',
+    'confirm_deletion_button': 'Подтвердить удаление',
 
     'check_form': 'Сохранить трату?',
     'save_form': 'Трата сохранена.',
@@ -74,8 +75,7 @@ TEXTS = {
 
     'edit_start': 'Выберите трату для удаления. Для отмены введи /cancel',
     'edit_no_expenses': 'На данную дату трат нет.',
-    'edit_success_delete': 'Трата удалена.\n'
-                           'Для добавления еще одной траты используй команду /edit',
+    'edit_success_delete': 'Трата удалена.',
 
     'DATE_FORMAT': '%d.%m.%Y',
 }
