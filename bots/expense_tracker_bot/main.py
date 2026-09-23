@@ -9,8 +9,9 @@ from aiogram.types import BotCommandScopeDefault
 
 from config.config import Config, load_config
 from database.connection import create_session_maker
-from handlers.expense_edit import edit_router
 from handlers.expense_add import expense_add_router
+from handlers.expense_delete import expense_delete_router
+from handlers.expense_browser import expense_browser_router
 from handlers.main_menu import menu_router
 from handlers.place_categories import pc_router
 from handlers.user import user_router
@@ -49,7 +50,8 @@ async def main():
 
     logger.info('Including routers...')
     dp.include_router(expense_add_router)
-    dp.include_router(edit_router)
+    dp.include_router(expense_browser_router)
+    dp.include_router(expense_delete_router)
     dp.include_router(pc_router)
     dp.include_router(menu_router)
     dp.include_router(user_router)

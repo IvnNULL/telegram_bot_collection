@@ -21,7 +21,7 @@ from texts.texts import TEXTS
 
 logger = logging.getLogger(__name__)
 
-edit_router = Router()
+expense_browser_router = Router()
 
 
 def prepare_edit_data(expenses: list[Expense]) -> dict:
@@ -73,13 +73,13 @@ async def start_edit_expense(message: Message, state: FSMContext, session: Async
     await state.update_data(main_message_id=main_message_id.message_id, date=latest_date.isoformat(), **data)
 
 
-@edit_router.message(StateFilter(default_state), Command(commands='edit'))
+@expense_browser_router.message(StateFilter(default_state), Command(commands='edit'))
 async def process_edit_command(message: Message, state: FSMContext, session: AsyncSession):
     await message.delete()
     await start_edit_expense(message, state, session)
 
 
-@edit_router.callback_query(StateFilter(default_state), F.data == 'expense:edit')
+@expense_browser_router.callback_query(StateFilter(default_state), F.data == 'expense:edit')
 async def process_edit_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
     await callback.answer()
     with suppress(TelegramBadRequest):
@@ -87,7 +87,7 @@ async def process_edit_click(callback: CallbackQuery, state: FSMContext, session
     await start_edit_expense(callback.message, state, session)
 
 
-@edit_router.message(StateFilter(ExpenseEditSteps), Command('cancel'))
+@expense_browser_router.message(StateFilter(ExpenseEditSteps), Command('cancel'))
 async def process_cancel_command(message: Message, state: FSMContext):
     await message.delete()
     main_message_id = await state.get_value('main_message_id')
@@ -99,20 +99,22 @@ async def process_cancel_command(message: Message, state: FSMContext):
     await send_main_menu(message)
 
 
-@edit_router.callback_query(StateFilter(ExpenseEditSteps), ExpenseCallback.filter(F.action == 'cancel'))
+@expense_browser_router.callback_query(StateFilter(ExpenseEditSteps), ExpenseCallback.filter(F.action == 'cancel'))
 async def process_cancel_click(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await state.clear()
     await send_main_menu(callback.message)
 
 
-@edit_router.callback_query(StateFilter(ExpenseEditSteps), ExpenseCallback.filter(F.action == 'pass'))
+@expense_browser_router.callback_query(StateFilter(ExpenseEditSteps), ExpenseCallback.filter(F.action == 'pass'))
 async def process_pass_click(callback: CallbackQuery):
     await callback.answer()
     logger.info('PASS click')
 
 
-@edit_router.callback_query(StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'move'))
+@expense_browser_router.callback_query(
+    StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'move')
+)
 async def process_move_click(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
     step = int(callback_data.value)
     data = await state.get_data()
@@ -135,7 +137,7 @@ async def process_move_click(callback: CallbackQuery, callback_data: ExpenseCall
     )
 
 
-@edit_router.callback_query(
+@expense_browser_router.callback_query(
     StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter((F.action == 'change') & (F.value == 'date'))
 )
 async def process_change_date_click(callback: CallbackQuery, state: FSMContext):
@@ -150,7 +152,7 @@ async def process_change_date_click(callback: CallbackQuery, state: FSMContext):
     )
 
 
-@edit_router.message(StateFilter(ExpenseEditSteps.changing_date))
+@expense_browser_router.message(StateFilter(ExpenseEditSteps.changing_date))
 async def process_date_input(message: Message, state: FSMContext, session: AsyncSession):
     await message.delete()
     data = await state.get_data()
@@ -188,7 +190,9 @@ async def process_date_input(message: Message, state: FSMContext, session: Async
     )
 
 
-@edit_router.callback_query(StateFilter(ExpenseEditSteps.changing_date), ExpenseCallback.filter(F.action == 'select'))
+@expense_browser_router.callback_query(
+    StateFilter(ExpenseEditSteps.changing_date), ExpenseCallback.filter(F.action == 'select')
+)
 async def process_date_select(
     callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext, session: AsyncSession
 ):
@@ -215,7 +219,9 @@ async def process_date_select(
     )
 
 
-@edit_router.callback_query(StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'select'))
+@expense_browser_router.callback_query(
+    StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'select')
+)
 async def process_expense_select(
     callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext, session: AsyncSession
 ):
@@ -232,7 +238,9 @@ async def process_expense_select(
     await callback.message.edit_text(text=expense_to_text(expense), reply_markup=get_action_kb())
 
 
-@edit_router.callback_query(StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'return'))
+@expense_browser_router.callback_query(
+    StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'return')
+)
 async def process_return_click(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await state.update_data(expense=None)
@@ -247,17 +255,6 @@ async def process_return_click(callback: CallbackQuery, state: FSMContext):
     )
 
 
-@edit_router.callback_query(StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'delete'))
-async def process_delete_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
-    expense = await state.get_value('expense')
-    expense_repo = ExpenseRepository(session)
-    await expense_repo.delete_expense_by_id(expense['id'])
-    await callback.message.edit_reply_markup(reply_markup=None)
-    await callback.message.answer(text=TEXTS['edit_success_delete'])
-    await state.clear()
-    await send_main_menu(callback.message)
-
-
-@edit_router.message(StateFilter(ExpenseEditSteps))
+@expense_browser_router.message(StateFilter(ExpenseEditSteps))
 async def process_unexpected_send(message: Message):
     await message.delete()
