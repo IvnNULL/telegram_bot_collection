@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.repositories import ExpenseRepository, PayerRepository, PlaceCategoryRepository
 from keyboards.callbacks import ExpenseCallback
 from keyboards.keyboards import get_add_confirmation_kb, get_suggestions_kb, get_date_suggestions_kb
+from services.expense_service import expense_dict_to_text
 from states.states import ExpenseAddSteps
 from texts.texts import TEXTS
 
@@ -22,20 +23,9 @@ logger = logging.getLogger(__name__)
 expense_add_router = Router()
 
 
-def get_expense_text(expense_dict: dict) -> str:
-    return (
-        f'Дата: {expense_dict["exp_date"].strftime(TEXTS["DATE_FORMAT"])}\n'
-        f'Место: {expense_dict.get("place", "")}\n'
-        f'Категория: {expense_dict.get("category", "")}\n'
-        f'Описание: {expense_dict.get("description", "")}\n'
-        f'Сумма: {expense_dict.get("amount", "")}\n'
-        f'Плательщик: {expense_dict.get("payer", "")}'
-    )
-
-
 async def update_expense_message(message: Message, state: FSMContext, suffix: str | None = None):
     data = await state.get_data()
-    expense_text = get_expense_text(data.get('expense_data', {}))
+    expense_text = expense_dict_to_text(data.get('expense_data', {}))
     if suffix:
         expense_text += f'\n\n{suffix}'
     if data.get('expense_message_id'):
@@ -91,7 +81,7 @@ async def start_add_expense(message: Message, state: FSMContext):
     await proceed_to_next_step(
         message=message,
         state=state,
-        expense_field='exp_date',
+        expense_field='date',
         expense_value=date.today(),
         next_state=ExpenseAddSteps.waiting_for_place,
         next_text=TEXTS['fill_place'],
@@ -290,7 +280,7 @@ async def process_date_input(message: Message, state: FSMContext):
     await proceed_to_next_step(
         message=message,
         state=state,
-        expense_field='exp_date',
+        expense_field='date',
         expense_value=new_date,
         next_state=ExpenseAddSteps.waiting_for_confirmation,
         next_text=TEXTS['check_form'],
@@ -305,7 +295,7 @@ async def process_date_select(callback: CallbackQuery, callback_data: ExpenseCal
     await proceed_to_next_step(
         message=callback.message,
         state=state,
-        expense_field='exp_date',
+        expense_field='date',
         expense_value=new_date,
         next_state=ExpenseAddSteps.waiting_for_confirmation,
         next_text=TEXTS['check_form'],

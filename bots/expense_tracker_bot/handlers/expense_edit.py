@@ -10,17 +10,40 @@ from aiogram.fsm.state import default_state
 from aiogram.types import CallbackQuery, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from database.models import Expense
 from database.repositories import ExpenseRepository
 from handlers.main_menu import send_main_menu
 from keyboards.callbacks import ExpenseCallback
 from keyboards.keyboards import get_browsing_kb, get_date_suggestions_kb, get_action_kb
-from services.expense_service import expense_to_text, prepare_edit_data, expense_dump
+from services.expense_service import expense_to_text, expense_dump, expenses_to_button_labels
 from states.states import ExpenseEditSteps
 from texts.texts import TEXTS
 
 logger = logging.getLogger(__name__)
 
 edit_router = Router()
+
+
+def prepare_edit_data(expenses: list[Expense]) -> dict:
+    PAGE_SIZE = 7
+
+    button_labels = expenses_to_button_labels(expenses)
+    if not button_labels:
+        button_labels = [TEXTS['edit_no_expenses']]
+
+    pages_data = []
+    for i, label in enumerate(button_labels):
+        if i % PAGE_SIZE == 0:
+            pages_data.append([])
+        button_item = {'text': label, 'index': i}
+        pages_data[-1].append(button_item)
+
+    return {
+        'pages': pages_data,
+        'expenses_ids': [expense.id for expense in expenses],
+        'current_page': 1,
+        'total_pages': len(pages_data),
+    }
 
 
 async def start_edit_expense(message: Message, state: FSMContext, session: AsyncSession):
@@ -36,7 +59,7 @@ async def start_edit_expense(message: Message, state: FSMContext, session: Async
     main_message_id = await message.answer(
         text=TEXTS['edit_start'],
         reply_markup=get_browsing_kb(
-            data['expenses_buttons'][data['current_page'] - 1],
+            data['pages'][data['current_page'] - 1],
             data['current_page'],
             data['total_pages'],
             latest_date,
@@ -97,7 +120,7 @@ async def process_move_click(callback: CallbackQuery, callback_data: ExpenseCall
     await state.update_data(current_page=new_page)
     await callback.message.edit_reply_markup(
         reply_markup=get_browsing_kb(
-            data['expenses_buttons'][new_page - 1],
+            data['pages'][new_page - 1],
             new_page,
             data['total_pages'],
             date.fromisoformat(data['date']),
@@ -150,7 +173,7 @@ async def process_date_input(message: Message, state: FSMContext, session: Async
         chat_id=message.chat.id,
         message_id=data['main_message_id'],
         reply_markup=get_browsing_kb(
-            data['expenses_buttons'][data['current_page'] - 1],
+            data['pages'][data['current_page'] - 1],
             data['current_page'],
             data['total_pages'],
             current_date,
@@ -177,7 +200,7 @@ async def process_date_select(
     await callback.message.edit_text(
         text=TEXTS['edit_start'],
         reply_markup=get_browsing_kb(
-            data['expenses_buttons'][data['current_page'] - 1],
+            data['pages'][data['current_page'] - 1],
             data['current_page'],
             data['total_pages'],
             current_date,
@@ -209,7 +232,7 @@ async def process_return_click(callback: CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
         text=TEXTS['edit_start'],
         reply_markup=get_browsing_kb(
-            data['expenses_buttons'][data['current_page'] - 1],
+            data['pages'][data['current_page'] - 1],
             data['current_page'],
             data['total_pages'],
             date.fromisoformat(data['date']),

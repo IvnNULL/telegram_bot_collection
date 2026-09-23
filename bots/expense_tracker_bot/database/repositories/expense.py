@@ -14,7 +14,7 @@ class ExpenseRepository(BaseRepository):
         self,
         *,
         user_id: int,
-        exp_date: date,
+        date: date,
         category: str,
         place: str,
         description: str,
@@ -23,7 +23,7 @@ class ExpenseRepository(BaseRepository):
     ) -> None:
         expense = Expense(
             user_id=user_id,
-            date=exp_date,
+            date=date,
             category=category,
             place=place,
             description=description,

@@ -5,29 +5,15 @@ from texts.texts import TEXTS
 
 
 def expenses_to_text(expenses: list[Expense]) -> str:
-    text = ''
+    texts = []
     previous_date = None
     for expense in expenses:
         if previous_date != expense.date:
             previous_date = expense.date
-            text += f'\n<b>{expense.date.strftime("%d.%m.%Y")}</b>\n'
+            texts.append(f'\n<b>{expense.date.strftime("%d.%m.%Y")}</b>\n')
         amount = f'{expense.amount:_}'.replace('_', ' ')
-        text += f'{expense.place}: {amount} р. - {expense.payer}\n'
-
-    return text
-
-
-def expense_to_text(expense: Expense) -> str:
-    expense_data = expense.date.strftime(TEXTS['DATE_FORMAT'])
-    expense_amount = f'{expense.amount:_}'.replace('_', ' ')
-    return (
-        f'Дата: {expense_data}\n'
-        f'Место: {expense.place}\n'
-        f'Категория: {expense.category}\n'
-        f'Описание: {expense.description}\n'
-        f'Сумма: {expense_amount}\n'
-        f'Плательщик: {expense.payer}'
-    )
+        texts.append(f'{expense.place}: {amount} р. - {expense.payer}\n')
+    return ''.join(texts)
 
 
 def expenses_to_csv_text(expenses: list[Expense]) -> str:
@@ -41,14 +27,12 @@ def expenses_to_csv_text(expenses: list[Expense]) -> str:
             f'{expense.amount};'
             f'{expense.payer}'
         )
-
     return '\n'.join(lines)
 
 
-def text_to_csv_file(csv_text: str):
+def text_to_csv_file(csv_text: str) -> BufferedInputFile:
     file_bytes = csv_text.encode('utf-8-sig')
     csv_file = BufferedInputFile(file_bytes, filename='expenses.csv')
-
     return csv_file
 
 
@@ -64,27 +48,23 @@ def expense_dump(expense: Expense) -> dict:
     }
 
 
-def prepare_edit_data(expenses: list[Expense]):
-    page_size = 7
-    sep = ' | '
+def expense_dict_to_text(expense_dict: dict) -> str:
+    expense_amount = expense_dict.get('amount', '')
+    if expense_amount:
+        expense_amount = f'{expense_amount:_} р.'.replace('_', ' ')
+    return (
+        f'Дата: {expense_dict["date"].strftime(TEXTS["DATE_FORMAT"])}\n'
+        f'Место: {expense_dict.get("place", "")}\n'
+        f'Категория: {expense_dict.get("category", "")}\n'
+        f'Описание: {expense_dict.get("description", "")}\n'
+        f'Сумма: {expense_amount}\n'
+        f'Плательщик: {expense_dict.get("payer", "")}'
+    )
 
-    buttons = []
 
-    for i, expense in enumerate(expenses):
-        if i % page_size == 0:
-            buttons.append([])
-        buttons[-1].append(
-            {
-                'text': sep.join([expense.place, expense.category, f'{expense.amount}', expense.payer]),
-                'index': f'{i}',
-            }
-        )
-    if not buttons:
-        buttons.append([{'text': TEXTS['edit_no_expenses'], 'index': 'pass'}])
+def expense_to_text(expense: Expense) -> str:
+    return expense_dict_to_text(expense_dump(expense))
 
-    return {
-        'expenses_buttons': buttons,
-        'expenses_ids': [expense.id for expense in expenses],
-        'current_page': 1,
-        'total_pages': len(buttons),
-    }
+
+def expenses_to_button_labels(expenses: list[Expense]) -> list[str]:
+    return [' | '.join([expense.place, expense.category, f'{expense.amount}', expense.payer]) for expense in expenses]
