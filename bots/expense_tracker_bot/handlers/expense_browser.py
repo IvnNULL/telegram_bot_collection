@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 expense_browser_router = Router()
 
 
-def prepare_edit_data(expenses: list[Expense]) -> dict:
+def prepare_browser_data(expenses: list[Expense]) -> dict:
     PAGE_SIZE = 7
 
     button_labels = expenses_to_button_labels(expenses)
@@ -51,7 +51,7 @@ def prepare_edit_data(expenses: list[Expense]) -> dict:
     }
 
 
-async def start_edit_expense(message: Message, state: FSMContext, session: AsyncSession):
+async def start_browser(message: Message, state: FSMContext, session: AsyncSession):
     await state.set_state(ExpenseEditSteps.browsing)
 
     expense_repo = ExpenseRepository(session)
@@ -59,7 +59,7 @@ async def start_edit_expense(message: Message, state: FSMContext, session: Async
     if latest_date is None:
         latest_date = date.today()
     expenses = await expense_repo.get_expenses_by_date(latest_date)
-    data = prepare_edit_data(expenses)
+    data = prepare_browser_data(expenses)
 
     main_message_id = await message.answer(
         text=TEXTS['edit_start'],
@@ -73,10 +73,35 @@ async def start_edit_expense(message: Message, state: FSMContext, session: Async
     await state.update_data(main_message_id=main_message_id.message_id, date=latest_date.isoformat(), **data)
 
 
+async def update_browser_message(message: Message, data: dict):
+    await message.bot.edit_message_text(
+        text=TEXTS['edit_start'],
+        chat_id=message.chat.id,
+        message_id=data['main_message_id'],
+        reply_markup=get_browsing_kb(
+            data['pages'][data['current_page'] - 1],
+            data['current_page'],
+            data['total_pages'],
+            date.fromisoformat(data['date']),
+        ),
+    )
+
+
+async def sync_browser_data_by_date(target_date: date, state: FSMContext, session: AsyncSession):
+    expense_repo = ExpenseRepository(session)
+    expenses = await expense_repo.get_expenses_by_date(target_date)
+
+    updated_data = prepare_browser_data(expenses)
+    updated_data['date'] = target_date.isoformat()
+
+    await state.update_data(**updated_data)
+    return await state.get_data()
+
+
 @expense_browser_router.message(StateFilter(default_state), Command(commands='edit'))
 async def process_edit_command(message: Message, state: FSMContext, session: AsyncSession):
     await message.delete()
-    await start_edit_expense(message, state, session)
+    await start_browser(message, state, session)
 
 
 @expense_browser_router.callback_query(StateFilter(default_state), F.data == 'expense:edit')
@@ -84,7 +109,7 @@ async def process_edit_click(callback: CallbackQuery, state: FSMContext, session
     await callback.answer()
     with suppress(TelegramBadRequest):
         await callback.message.delete()
-    await start_edit_expense(callback.message, state, session)
+    await start_browser(callback.message, state, session)
 
 
 @expense_browser_router.message(StateFilter(ExpenseEditSteps), Command('cancel'))
@@ -94,7 +119,7 @@ async def process_cancel_command(message: Message, state: FSMContext):
     try:
         await message.bot.delete_message(chat_id=message.chat.id, message_id=main_message_id)
     except TelegramBadRequest as e:
-        logger.error(e)
+        pass
     await state.clear()
     await send_main_menu(message)
 
@@ -109,32 +134,21 @@ async def process_cancel_click(callback: CallbackQuery, state: FSMContext):
 @expense_browser_router.callback_query(StateFilter(ExpenseEditSteps), ExpenseCallback.filter(F.action == 'pass'))
 async def process_pass_click(callback: CallbackQuery):
     await callback.answer()
-    logger.info('PASS click')
 
 
 @expense_browser_router.callback_query(
     StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'move')
 )
 async def process_move_click(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
+    await callback.answer()
     step = int(callback_data.value)
     data = await state.get_data()
-    current_page = data['current_page']
-    total_pages = data['total_pages']
 
-    new_page = current_page + step
-    if not 1 <= new_page <= total_pages:
-        await callback.answer()
-        return
-
-    await state.update_data(current_page=new_page)
-    await callback.message.edit_reply_markup(
-        reply_markup=get_browsing_kb(
-            data['pages'][new_page - 1],
-            new_page,
-            data['total_pages'],
-            date.fromisoformat(data['date']),
-        ),
-    )
+    new_page = data['current_page'] + step
+    if 1 <= new_page <= data['total_pages']:
+        await state.update_data(current_page=new_page)
+        data['current_page'] = new_page
+        await update_browser_message(callback.message, data)
 
 
 @expense_browser_router.callback_query(
@@ -169,25 +183,10 @@ async def process_date_input(message: Message, state: FSMContext, session: Async
         )
 
     if new_date != current_date:
-        expense_repo = ExpenseRepository(session)
-        expenses = await expense_repo.get_expenses_by_date(new_date)
-        new_data = prepare_edit_data(expenses)
-        await state.update_data(date=new_date.isoformat(), **new_data)
-        data.update(new_data)
-        current_date = new_date
+        data = await sync_browser_data_by_date(new_date, state, session)
 
     await state.set_state(ExpenseEditSteps.browsing)
-    await message.bot.edit_message_text(
-        text=TEXTS['edit_start'],
-        chat_id=message.chat.id,
-        message_id=data['main_message_id'],
-        reply_markup=get_browsing_kb(
-            data['pages'][data['current_page'] - 1],
-            data['current_page'],
-            data['total_pages'],
-            current_date,
-        ),
-    )
+    await update_browser_message(message, data)
 
 
 @expense_browser_router.callback_query(
@@ -196,27 +195,15 @@ async def process_date_input(message: Message, state: FSMContext, session: Async
 async def process_date_select(
     callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext, session: AsyncSession
 ):
+    data = await state.get_data()
+    current_date = date.fromisoformat(data['date'])
     new_date = datetime.strptime(callback_data.value, TEXTS['DATE_FORMAT']).date()
-    current_date = date.fromisoformat(await state.get_value('date'))
+
     if new_date != current_date:
-        expense_repo = ExpenseRepository(session)
-        expenses = await expense_repo.get_expenses_by_date(new_date)
-        data = prepare_edit_data(expenses)
-        await state.update_data(date=new_date.isoformat(), **data)
-        current_date = new_date
-    else:
-        data = await state.get_data()
+        data = await sync_browser_data_by_date(new_date, state, session)
 
     await state.set_state(ExpenseEditSteps.browsing)
-    await callback.message.edit_text(
-        text=TEXTS['edit_start'],
-        reply_markup=get_browsing_kb(
-            data['pages'][data['current_page'] - 1],
-            data['current_page'],
-            data['total_pages'],
-            current_date,
-        ),
-    )
+    await update_browser_message(callback.message, data)
 
 
 @expense_browser_router.callback_query(
@@ -226,8 +213,7 @@ async def process_expense_select(
     callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext, session: AsyncSession
 ):
     if callback_data.value == 'pass':
-        await callback.answer()
-        return
+        return await callback.answer()
 
     expenses_ids = await state.get_value('expenses_ids')
     current_index = int(callback_data.value)
@@ -242,17 +228,9 @@ async def process_expense_select(
     StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'return')
 )
 async def process_return_click(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
     await state.update_data(expense=None)
-    await callback.message.edit_text(
-        text=TEXTS['edit_start'],
-        reply_markup=get_browsing_kb(
-            data['pages'][data['current_page'] - 1],
-            data['current_page'],
-            data['total_pages'],
-            date.fromisoformat(data['date']),
-        ),
-    )
+    data = await state.get_data()
+    await update_browser_message(callback.message, data)
 
 
 @expense_browser_router.message(StateFilter(ExpenseEditSteps))
