@@ -29,13 +29,18 @@ def prepare_edit_data(expenses: list[Expense]) -> dict:
 
     button_labels = expenses_to_button_labels(expenses)
     if not button_labels:
-        button_labels = [TEXTS['edit_no_expenses']]
+        return {
+            'pages': [[{'text': TEXTS['edit_no_expenses'], 'index': 'pass'}]],
+            'expenses_ids': [],
+            'current_page': 1,
+            'total_pages': 1,
+        }
 
     pages_data = []
     for i, label in enumerate(button_labels):
         if i % PAGE_SIZE == 0:
             pages_data.append([])
-        button_item = {'text': label, 'index': i}
+        button_item = {'text': label, 'index': str(i)}
         pages_data[-1].append(button_item)
 
     return {
@@ -104,6 +109,7 @@ async def process_cancel_click(callback: CallbackQuery, state: FSMContext):
 @edit_router.callback_query(StateFilter(ExpenseEditSteps), ExpenseCallback.filter(F.action == 'pass'))
 async def process_pass_click(callback: CallbackQuery):
     await callback.answer()
+    logger.info('PASS click')
 
 
 @edit_router.callback_query(StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'move'))
@@ -115,7 +121,8 @@ async def process_move_click(callback: CallbackQuery, callback_data: ExpenseCall
 
     new_page = current_page + step
     if not 1 <= new_page <= total_pages:
-        return callback.answer()
+        await callback.answer()
+        return
 
     await state.update_data(current_page=new_page)
     await callback.message.edit_reply_markup(
@@ -163,7 +170,7 @@ async def process_date_input(message: Message, state: FSMContext, session: Async
         expense_repo = ExpenseRepository(session)
         expenses = await expense_repo.get_expenses_by_date(new_date)
         new_data = prepare_edit_data(expenses)
-        await state.update_data(**new_data)
+        await state.update_data(date=new_date.isoformat(), **new_data)
         data.update(new_data)
         current_date = new_date
 
@@ -213,7 +220,7 @@ async def process_expense_select(
     callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext, session: AsyncSession
 ):
     if callback_data.value == 'pass':
-        callback.answer()
+        await callback.answer()
         return
 
     expenses_ids = await state.get_value('expenses_ids')

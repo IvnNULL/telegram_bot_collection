@@ -40,24 +40,35 @@ def get_browsing_kb(
     builder = InlineKeyboardBuilder()
 
     for button in expense_buttons:
-        builder.row(InlineKeyboardButton(text=button['text'], callback_data=f'expense:select:{button["index"]}'))
+        builder.row(
+            InlineKeyboardButton(
+                text=button['text'], callback_data=ExpenseCallback(action='select', value=button['index']).pack()
+            )
+        )
 
     builder.row(
-        InlineKeyboardButton(text=current_date.strftime(TEXTS['DATE_FORMAT']), callback_data='expense:change:date')
+        InlineKeyboardButton(
+            text=current_date.strftime(TEXTS['DATE_FORMAT']),
+            callback_data=ExpenseCallback(action='change', value='date').pack(),
+        )
     )
     builder.row(
-        InlineKeyboardButton(text='<', callback_data='expense:move:-1'),
-        InlineKeyboardButton(text=f'{current_page}/{total_pages}', callback_data='expense:pass'),
-        InlineKeyboardButton(text='>', callback_data='expense:move:+1'),
+        InlineKeyboardButton(text='<', callback_data=ExpenseCallback(action='move', value='-1').pack()),
+        InlineKeyboardButton(text=f'{current_page}/{total_pages}', callback_data=ExpenseCallback(action='pass').pack()),
+        InlineKeyboardButton(text='>', callback_data=ExpenseCallback(action='move', value='+1').pack()),
     )
-    builder.row(InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data='expense:cancel'))
+    builder.row(
+        InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data=ExpenseCallback(action='cancel').pack())
+    )
     return builder.as_markup()
+
 
 def get_action_kb():
     builder = InlineKeyboardBuilder()
     builder.button(text=TEXTS['delete_button'], callback_data=ExpenseCallback(action='delete').pack())
     builder.button(text=TEXTS['return_button'], callback_data=ExpenseCallback(action='return').pack())
     return builder.as_markup()
+
 
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
