@@ -86,12 +86,16 @@ def get_action_kb():
     return builder.as_markup()
 
 
+def get_show_menu_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text=TEXTS['main_menu:show_menu'], callback_data=MenuCallback(target='show_menu').pack())
+    return builder.as_markup()
+
+
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-
     builder.button(text=TEXTS['main_menu:expense:add'], callback_data=MenuCallback(target='expense_add').pack())
     builder.button(text=TEXTS['main_menu:expense:edit'], callback_data=MenuCallback(target='expense_edit').pack())
-    # builder.button(text=TEXTS['main_menu:expense:show'], callback_data='expense:show')
-
+    builder.button(text=TEXTS['main_menu:expense:export'], callback_data=MenuCallback(target='export').pack())
     builder.adjust(1)
     return builder.as_markup()

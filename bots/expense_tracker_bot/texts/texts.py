@@ -69,9 +69,11 @@ TEXTS = {
         'Выберите действие:'
     ),
     'main_menu:menu': 'Меню',
+    'main_menu:show_menu': 'Показать меню',
+
     'main_menu:expense:add': 'Добавить трату',
     'main_menu:expense:edit': 'Изменить трату',
-    'main_menu:expense:show': 'Показать расходы',
+    'main_menu:expense:export': 'Экспорт трат',
 
     'edit_start': 'Выберите трату для удаления. Для отмены введи /cancel',
     'edit_no_expenses': 'На данную дату трат нет.',

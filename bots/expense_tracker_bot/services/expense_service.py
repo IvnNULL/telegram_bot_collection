@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from aiogram.types import BufferedInputFile
 
 from database.models import Expense
@@ -31,8 +33,10 @@ def expenses_to_csv_text(expenses: list[Expense]) -> str:
 
 
 def text_to_csv_file(csv_text: str) -> BufferedInputFile:
+    now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    filename = f'expenses_{now}.csv'
     file_bytes = csv_text.encode('utf-8-sig')
-    csv_file = BufferedInputFile(file_bytes, filename='expenses.csv')
+    csv_file = BufferedInputFile(file_bytes, filename=filename)
     return csv_file
 
 

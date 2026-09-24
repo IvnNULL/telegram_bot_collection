@@ -35,10 +35,9 @@ class ExpenseRepository(BaseRepository):
         await self.session.commit()
         logger.debug(f'Add expense from {user_id} completed')
 
-    async def list_expenses(self) -> list[Expense] | None:
+    async def list_expenses(self) -> list[Expense]:
         data = await self.session.scalars(select(Expense).order_by(Expense.date))
-        expenses = data.all()
-        return expenses if expenses else None
+        return data.all()
 
     async def get_latest_expense_date(self) -> date | None:
         latest_date = await self.session.scalar(select(func.max(Expense.date)))
