@@ -118,7 +118,7 @@ async def process_add_command(message: Message, state: FSMContext):
     await start_add_expense(message, state)
 
 
-@expense_add_router.callback_query(StateFilter(default_state), MenuCallback.filter(F.target == 'expense_add'))
+@expense_add_router.callback_query(StateFilter(default_state), MenuCallback.filter(F.target == 'add'))
 async def process_add_click(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     with suppress(TelegramBadRequest):

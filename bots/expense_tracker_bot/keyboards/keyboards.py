@@ -36,8 +36,8 @@ def get_add_confirmation_kb() -> InlineKeyboardMarkup:
 
 def get_add_shortcut_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text=TEXTS['main_menu:expense:add'], callback_data=MenuCallback(target='expense_add').pack())
-    builder.button(text=TEXTS['main_menu:menu'], callback_data=MenuCallback(target='main').pack())
+    builder.button(text=TEXTS['menu:add'], callback_data=MenuCallback(target='add').pack())
+    builder.button(text=TEXTS['menu:back_to_menu'], callback_data=MenuCallback(target='main').pack())
     builder.adjust(2)
     return builder.as_markup()
 
@@ -88,22 +88,22 @@ def get_action_kb():
 
 def get_show_menu_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text=TEXTS['main_menu:show_menu'], callback_data=MenuCallback(target='show_menu').pack())
+    builder.button(text=TEXTS['menu:show_menu'], callback_data=MenuCallback(target='show_menu').pack())
     return builder.as_markup()
 
 
 def get_back_to_menu_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text=TEXTS['main_menu:back_to_menu'], callback_data=MenuCallback(target='main').pack())
+    builder.button(text=TEXTS['menu:back_to_menu'], callback_data=MenuCallback(target='main').pack())
     return builder.as_markup()
 
 
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text=TEXTS['main_menu:expense:add'], callback_data=MenuCallback(target='expense_add').pack())
-    builder.button(text=TEXTS['main_menu:expense:edit'], callback_data=MenuCallback(target='expense_edit').pack())
-    builder.button(text=TEXTS['main_menu:expense:show_all'], callback_data=MenuCallback(target='show_all').pack())
-    builder.button(text=TEXTS['main_menu:expense:export'], callback_data=MenuCallback(target='export').pack())
-    builder.button(text=TEXTS['main_menu:help'], callback_data=MenuCallback(target='help').pack())
+    builder.button(text=TEXTS['menu:add'], callback_data=MenuCallback(target='add').pack())
+    builder.button(text=TEXTS['menu:edit'], callback_data=MenuCallback(target='edit').pack())
+    builder.button(text=TEXTS['menu:show_all'], callback_data=MenuCallback(target='show_all').pack())
+    builder.button(text=TEXTS['menu:export'], callback_data=MenuCallback(target='export').pack())
+    builder.button(text=TEXTS['menu:help'], callback_data=MenuCallback(target='help').pack())
     builder.adjust(1)
     return builder.as_markup()

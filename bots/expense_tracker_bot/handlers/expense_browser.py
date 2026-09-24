@@ -104,7 +104,7 @@ async def process_edit_command(message: Message, state: FSMContext, session: Asy
     await start_browser(message, state, session)
 
 
-@expense_browser_router.callback_query(StateFilter(default_state), MenuCallback.filter(F.target == 'expense_edit'))
+@expense_browser_router.callback_query(StateFilter(default_state), MenuCallback.filter(F.target == 'edit'))
 async def process_edit_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
     await callback.answer()
     with suppress(TelegramBadRequest):

@@ -37,17 +37,17 @@ TEXTS = {
     '/start_description': 'Запуск бота',
 
     'main_menu': 'Главное меню\nВыберите действие:',
-    'main_menu:menu': 'Меню',
-    'main_menu:show_menu': 'Показать меню',
-    'main_menu:back_to_menu': 'Вернуться в меню',
-    'main_menu:expense:add': 'Добавить трату',
-    'main_menu:expense:show_all': 'Показать все траты',
-    'main_menu:expense:edit': 'Изменить трату',
-    'main_menu:expense:export': 'Экспорт трат',
-    'main_menu:help': 'Помощь',
+    'menu:show_menu': 'Показать меню',
+    'menu:back_to_menu': 'Вернуться в меню',
+    'menu:add': 'Добавить трату',
+    'menu:show_all': 'Показать все траты',
+    'menu:edit': 'Изменить трату',
+    'menu:export': 'Экспорт трат',
+    'menu:help': 'Помощь',
 
     'edit_start': 'Выберите трату для удаления. Для отмены введи /cancel',
     'edit_no_expenses': 'На данную дату трат нет.',
     'edit_success_delete': 'Трата удалена.',
+
     'DATE_FORMAT': '%d.%m.%Y',
 }
