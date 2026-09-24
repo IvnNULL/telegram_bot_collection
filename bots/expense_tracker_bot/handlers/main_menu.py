@@ -54,3 +54,10 @@ async def process_export_click(callback: CallbackQuery, session: AsyncSession):
     csv_file = text_to_csv_file(text)
     await callback.message.answer_document(document=csv_file, reply_markup=get_show_menu_kb())
 
+@menu_router.callback_query(MenuCallback.filter(F.target == 'help'))
+async def process_help_click(callback: CallbackQuery):
+    await callback.answer()
+    with suppress(TelegramBadRequest):
+        await callback.message.delete()
+
+    await callback.message.answer(text=TEXTS['help'], reply_markup=get_show_menu_kb())

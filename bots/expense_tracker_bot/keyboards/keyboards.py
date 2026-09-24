@@ -97,5 +97,6 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     builder.button(text=TEXTS['main_menu:expense:add'], callback_data=MenuCallback(target='expense_add').pack())
     builder.button(text=TEXTS['main_menu:expense:edit'], callback_data=MenuCallback(target='expense_edit').pack())
     builder.button(text=TEXTS['main_menu:expense:export'], callback_data=MenuCallback(target='export').pack())
+    builder.button(text=TEXTS['main_menu:help'], callback_data=MenuCallback(target='help').pack())
     builder.adjust(1)
     return builder.as_markup()
