@@ -34,6 +34,14 @@ def get_add_confirmation_kb() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def get_add_shortcut_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text=TEXTS['main_menu:expense:add'], callback_data=MenuCallback(target='expense_add').pack())
+    builder.button(text=TEXTS['main_menu:menu'], callback_data=MenuCallback(target='main').pack())
+    builder.adjust(2)
+    return builder.as_markup()
+
+
 def get_delete_confirmation_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text=TEXTS['confirm_deletion_button'], callback_data=ExpenseCallback(action='confirm').pack())
@@ -87,5 +95,3 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
 
     builder.adjust(1)
     return builder.as_markup()
-
-

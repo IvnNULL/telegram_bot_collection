@@ -13,7 +13,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.repositories import ExpenseRepository, PayerRepository, PlaceCategoryRepository
 from keyboards.callbacks import ExpenseCallback, MenuCallback
-from keyboards.keyboards import get_add_confirmation_kb, get_suggestions_kb, get_date_suggestions_kb
+from keyboards.keyboards import (
+    get_add_confirmation_kb,
+    get_suggestions_kb,
+    get_date_suggestions_kb,
+    get_add_shortcut_kb,
+)
 from services.expense_service import expense_dict_to_text
 from states.states import ExpenseAddSteps
 from texts.texts import TEXTS
@@ -102,18 +107,7 @@ async def stop_add_expense(message: Message, state: FSMContext):
         message=message,
         state=state,
         text=f'{TEXTS["cancel_form"]}\n{TEXTS["menu_form"]}',
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text=TEXTS['main_menu:expense:add'], callback_data=MenuCallback(target='expense_add').pack()
-                    ),
-                    InlineKeyboardButton(
-                        text=TEXTS['main_menu:menu'], callback_data=MenuCallback(target='main').pack()
-                    ),
-                ]
-            ]
-        ),
+        reply_markup=get_add_shortcut_kb(),
     )
     await state.clear()
 
@@ -321,21 +315,7 @@ async def process_confirm_click(callback: CallbackQuery, state: FSMContext, sess
 
     await update_expense_message(message=callback.message, state=state, suffix=TEXTS['save_form'])
     await update_step_message(
-        message=callback.message,
-        state=state,
-        text=TEXTS['menu_form'],
-        reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text=TEXTS['main_menu:expense:add'], callback_data=MenuCallback(target='expense_add').pack()
-                    ),
-                    InlineKeyboardButton(
-                        text=TEXTS['main_menu:menu'], callback_data=MenuCallback(target='main').pack()
-                    ),
-                ]
-            ]
-        ),
+        message=callback.message, state=state, text=TEXTS['menu_form'], reply_markup=get_add_shortcut_kb()
     )
 
     with suppress(TelegramBadRequest):
