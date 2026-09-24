@@ -5,6 +5,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
+from keyboards.callbacks import MenuCallback
 from keyboards.keyboards import get_main_menu_keyboard
 from texts.texts import TEXTS
 
@@ -17,7 +18,7 @@ async def send_main_menu(message: Message) -> None:
     await message.answer(text=TEXTS['main_menu'], reply_markup=get_main_menu_keyboard())
 
 
-@menu_router.callback_query(F.data == 'main:menu')
+@menu_router.callback_query(MenuCallback.filter(F.target == 'main'))
 async def process_edit_click(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.answer()

@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from keyboards.callbacks import ExpenseCallback
+from keyboards.callbacks import ExpenseCallback, MenuCallback
 from texts.texts import TEXTS
 
 
@@ -81,9 +81,11 @@ def get_action_kb():
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
-    builder.button(text=TEXTS['main_menu:expense:add'], callback_data='expense:add')
-    builder.button(text=TEXTS['main_menu:expense:edit'], callback_data='expense:edit')
+    builder.button(text=TEXTS['main_menu:expense:add'], callback_data=MenuCallback(target='expense_add').pack())
+    builder.button(text=TEXTS['main_menu:expense:edit'], callback_data=MenuCallback(target='expense_edit').pack())
     # builder.button(text=TEXTS['main_menu:expense:show'], callback_data='expense:show')
 
     builder.adjust(1)
     return builder.as_markup()
+
+

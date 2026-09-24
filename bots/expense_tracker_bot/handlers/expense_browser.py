@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.models import Expense
 from database.repositories import ExpenseRepository
 from handlers.main_menu import send_main_menu
-from keyboards.callbacks import ExpenseCallback
+from keyboards.callbacks import ExpenseCallback, MenuCallback
 from keyboards.keyboards import get_browsing_kb, get_date_suggestions_kb, get_action_kb
 from services.expense_service import expense_to_text, expense_dump, expenses_to_button_labels
 from states.states import ExpenseEditSteps
@@ -104,7 +104,7 @@ async def process_edit_command(message: Message, state: FSMContext, session: Asy
     await start_browser(message, state, session)
 
 
-@expense_browser_router.callback_query(StateFilter(default_state), F.data == 'expense:edit')
+@expense_browser_router.callback_query(StateFilter(default_state), MenuCallback.filter(F.target == 'expense_edit'))
 async def process_edit_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
     await callback.answer()
     with suppress(TelegramBadRequest):

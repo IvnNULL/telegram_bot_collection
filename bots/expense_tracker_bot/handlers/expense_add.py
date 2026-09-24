@@ -12,7 +12,7 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message, InlineKe
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.repositories import ExpenseRepository, PayerRepository, PlaceCategoryRepository
-from keyboards.callbacks import ExpenseCallback
+from keyboards.callbacks import ExpenseCallback, MenuCallback
 from keyboards.keyboards import get_add_confirmation_kb, get_suggestions_kb, get_date_suggestions_kb
 from services.expense_service import expense_dict_to_text
 from states.states import ExpenseAddSteps
@@ -105,8 +105,12 @@ async def stop_add_expense(message: Message, state: FSMContext):
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(text=TEXTS['main_menu:expense:add'], callback_data='expense:add'),
-                    InlineKeyboardButton(text=TEXTS['main_menu:menu'], callback_data='main:menu'),
+                    InlineKeyboardButton(
+                        text=TEXTS['main_menu:expense:add'], callback_data=MenuCallback(target='expense_add').pack()
+                    ),
+                    InlineKeyboardButton(
+                        text=TEXTS['main_menu:menu'], callback_data=MenuCallback(target='main').pack()
+                    ),
                 ]
             ]
         ),
@@ -120,7 +124,7 @@ async def process_add_command(message: Message, state: FSMContext):
     await start_add_expense(message, state)
 
 
-@expense_add_router.callback_query(StateFilter(default_state), F.data == 'expense:add')
+@expense_add_router.callback_query(StateFilter(default_state), MenuCallback.filter(F.target == 'expense_add'))
 async def process_add_click(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     with suppress(TelegramBadRequest):
@@ -323,8 +327,12 @@ async def process_confirm_click(callback: CallbackQuery, state: FSMContext, sess
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(text=TEXTS['main_menu:expense:add'], callback_data='expense:add'),
-                    InlineKeyboardButton(text=TEXTS['main_menu:menu'], callback_data='main:menu'),
+                    InlineKeyboardButton(
+                        text=TEXTS['main_menu:expense:add'], callback_data=MenuCallback(target='expense_add').pack()
+                    ),
+                    InlineKeyboardButton(
+                        text=TEXTS['main_menu:menu'], callback_data=MenuCallback(target='main').pack()
+                    ),
                 ]
             ]
         ),
