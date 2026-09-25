@@ -20,17 +20,19 @@ def get_date_suggestions_kb(last_date: date, days: int = 3) -> InlineKeyboardMar
     return get_suggestions_kb(action='select', values=dates)
 
 
+def get_add_cancel_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text=TEXTS['cancel_button'], callback_data=ExpenseCallback(action='cancel').pack())
+    return builder.as_markup()
+
+
 def get_add_confirmation_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.row(
-        InlineKeyboardButton(text=TEXTS['save_button'], callback_data=ExpenseCallback(action='save').pack()),
-        InlineKeyboardButton(text=TEXTS['cancel_button'], callback_data=ExpenseCallback(action='cancel').pack()),
+    builder.button(text=TEXTS['save_button'], callback_data=ExpenseCallback(action='save').pack())
+    builder.button(
+        text=TEXTS['change_date_button'], callback_data=ExpenseCallback(action='change', value='date').pack()
     )
-    builder.row(
-        InlineKeyboardButton(
-            text=TEXTS['change_date_button'], callback_data=ExpenseCallback(action='change', value='date').pack()
-        )
-    )
+    builder.adjust(1)
     return builder.as_markup()
 
 

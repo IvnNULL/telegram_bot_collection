@@ -8,16 +8,17 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, default_state
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message, InlineKeyboardButton
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.repositories import ExpenseRepository, PayerRepository, PlaceCategoryRepository
 from keyboards.callbacks import ExpenseCallback, MenuCallback
 from keyboards.keyboards import (
+    get_add_cancel_kb,
     get_add_confirmation_kb,
-    get_suggestions_kb,
-    get_date_suggestions_kb,
     get_add_shortcut_kb,
+    get_date_suggestions_kb,
+    get_suggestions_kb,
 )
 from services.expense_service import expense_dict_to_text
 from states.states import ExpenseAddSteps
@@ -28,20 +29,25 @@ logger = logging.getLogger(__name__)
 expense_add_router = Router()
 
 
-async def update_expense_message(message: Message, state: FSMContext, suffix: str | None = None):
+async def update_expense_message(
+    message: Message, state: FSMContext, prefix: str | None = None, reply_markup: InlineKeyboardMarkup | None = None
+):
     data = await state.get_data()
     expense_text = expense_dict_to_text(data.get('expense_data', {}))
-    if suffix:
-        expense_text += f'\n\n{suffix}'
+    if prefix:
+        expense_text = f'{prefix}\n\n{expense_text}'
     if data.get('expense_message_id'):
         try:
             await message.bot.edit_message_text(
-                text=expense_text, chat_id=message.chat.id, message_id=data['expense_message_id']
+                text=expense_text,
+                chat_id=message.chat.id,
+                message_id=data['expense_message_id'],
+                reply_markup=reply_markup,
             )
         except TelegramBadRequest:
             pass
     else:
-        expense_message = await message.answer(expense_text)
+        expense_message = await message.answer(text=expense_text, reply_markup=reply_markup)
         await state.update_data(expense_message_id=expense_message.message_id)
 
 
@@ -54,7 +60,7 @@ async def update_step_message(
             await message.bot.edit_message_text(
                 text=text, chat_id=message.chat.id, message_id=step_message_id, reply_markup=reply_markup
             )
-        except TelegramBadRequest as e:
+        except TelegramBadRequest:
             pass
     else:
         step_message = await message.answer(text=text, reply_markup=reply_markup)
@@ -74,15 +80,14 @@ async def proceed_to_next_step(
     expense_data.update({expense_field: expense_value})
     await state.update_data(expense_data=expense_data)
 
-    await update_expense_message(message=message, state=state)
+    await update_expense_message(
+        message=message, state=state, prefix=TEXTS['add_start'], reply_markup=get_add_cancel_kb()
+    )
     await state.set_state(next_state)
     await update_step_message(message=message, state=state, text=next_text, reply_markup=reply_markup)
 
 
 async def start_add_expense(message: Message, state: FSMContext):
-    start_message = await message.answer(text=TEXTS['fill_start'])
-    await state.update_data(start_message_id=start_message.message_id)
-
     await proceed_to_next_step(
         message=message,
         state=state,
@@ -94,14 +99,9 @@ async def start_add_expense(message: Message, state: FSMContext):
 
 
 async def stop_add_expense(message: Message, state: FSMContext):
-    data = await state.get_data()
-    message_ids = [data.get('start_message_id'), data.get('expense_message_id')]
-    for msg_id in message_ids:
-        if msg_id:
-            try:
-                await message.bot.delete_message(chat_id=message.chat.id, message_id=msg_id)
-            except TelegramBadRequest as e:
-                logger.error(e)
+    expense_message_id = await state.get_value('expense_message_id')
+    with suppress(TelegramBadRequest):
+        await message.bot.delete_message(chat_id=message.chat.id, message_id=expense_message_id)
 
     await update_step_message(
         message=message,
@@ -303,23 +303,20 @@ async def process_date_select(callback: CallbackQuery, callback_data: ExpenseCal
 
 @expense_add_router.callback_query(ExpenseAddSteps.waiting_for_confirmation, ExpenseCallback.filter(F.action == 'save'))
 async def process_confirm_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
-    data = await state.get_data()
     expense_repo = ExpenseRepository(session)
     payer_repo = PayerRepository(session)
     place_cat_repo = PlaceCategoryRepository(session)
 
-    expense_data = data['expense_data']
+    expense_data = await state.get_value('expense_data')
     await expense_repo.add_expense(user_id=callback.from_user.id, **expense_data)
     await payer_repo.add_payer(payer=expense_data['payer'])
     await place_cat_repo.add_place_category(place=expense_data['place'], category=expense_data['category'])
 
-    await update_expense_message(message=callback.message, state=state, suffix=TEXTS['save_form'])
+    await update_expense_message(message=callback.message, state=state, prefix=TEXTS['save_form'])
     await update_step_message(
         message=callback.message, state=state, text=TEXTS['menu_form'], reply_markup=get_add_shortcut_kb()
     )
 
-    with suppress(TelegramBadRequest):
-        await callback.message.bot.delete_message(chat_id=callback.message.chat.id, message_id=data['start_message_id'])
     await state.clear()
 
 
