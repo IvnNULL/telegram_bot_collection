@@ -16,3 +16,4 @@ class ExpenseEditSteps(StatesGroup):
     browsing = State()
     changing_date = State()
     deleting = State()
+    editing = State()

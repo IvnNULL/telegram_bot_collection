@@ -33,6 +33,7 @@ TEXTS = {
     'save_button': 'Сохранить',
     'cancel_button': 'Отмена',
     'return_button': 'Назад',
+    'edit_button': 'Изменить',
     'delete_button': 'Удалить',
     'confirm_deletion_button': 'Подтвердить удаление',
 
@@ -52,6 +53,10 @@ TEXTS = {
 
     'browser_text': 'Выберите трату для изменения или удаления:',
     'browser_no_expenses': 'На данную дату трат нет.',
+
+    'edit_text': 'Выберите поле, которое хотите изменить.\n'
+                 'После внесения всех правок обязательно нажмите кнопку - "Сохранить".',
+
     'success_delete': 'Трата удалена.',
 
     'DATE_FORMAT': '%d.%m.%Y',

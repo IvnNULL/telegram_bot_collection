@@ -44,14 +44,6 @@ def get_add_shortcut_kb() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def get_delete_confirmation_kb() -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
-    builder.button(text=TEXTS['confirm_deletion_button'], callback_data=ExpenseCallback(action='confirm').pack())
-    builder.button(text=TEXTS['cancel_button'], callback_data=ExpenseCallback(action='cancel').pack())
-    builder.adjust(1)
-    return builder.as_markup()
-
-
 def get_browsing_kb(
     expense_buttons: list[dict], current_page: int, total_pages: int, current_date: date
 ) -> InlineKeyboardMarkup:
@@ -81,10 +73,27 @@ def get_browsing_kb(
     return builder.as_markup()
 
 
-def get_action_kb():
+def get_action_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
+    builder.button(text=TEXTS['edit_button'], callback_data=ExpenseCallback(action='edit').pack())
     builder.button(text=TEXTS['delete_button'], callback_data=ExpenseCallback(action='delete').pack())
     builder.button(text=TEXTS['return_button'], callback_data=ExpenseCallback(action='return').pack())
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def get_edit_fields_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text=TEXTS['cancel_button'], callback_data=ExpenseCallback(action='cancel').pack())
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def get_delete_confirmation_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text=TEXTS['confirm_deletion_button'], callback_data=ExpenseCallback(action='confirm').pack())
+    builder.button(text=TEXTS['cancel_button'], callback_data=ExpenseCallback(action='cancel').pack())
+    builder.adjust(1)
     return builder.as_markup()
 
 
