@@ -62,7 +62,7 @@ async def start_browser(message: Message, state: FSMContext, session: AsyncSessi
     data = prepare_browser_data(expenses)
 
     main_message_id = await message.answer(
-        text=TEXTS['browser_start'],
+        text=TEXTS['browser_text'],
         reply_markup=get_browsing_kb(
             data['pages'][data['current_page'] - 1],
             data['current_page'],
@@ -75,7 +75,7 @@ async def start_browser(message: Message, state: FSMContext, session: AsyncSessi
 
 async def update_browser_message(message: Message, data: dict):
     await message.bot.edit_message_text(
-        text=TEXTS['browser_start'],
+        text=TEXTS['browser_text'],
         chat_id=message.chat.id,
         message_id=data['main_message_id'],
         reply_markup=get_browsing_kb(
@@ -136,9 +136,7 @@ async def process_pass_click(callback: CallbackQuery):
     await callback.answer()
 
 
-@expense_browser_router.callback_query(
-    StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'move')
-)
+@expense_browser_router.callback_query(ExpenseEditSteps.browsing, ExpenseCallback.filter(F.action == 'move'))
 async def process_move_click(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
     await callback.answer()
     step = int(callback_data.value)
@@ -152,7 +150,7 @@ async def process_move_click(callback: CallbackQuery, callback_data: ExpenseCall
 
 
 @expense_browser_router.callback_query(
-    StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter((F.action == 'change') & (F.value == 'date'))
+    ExpenseEditSteps.browsing, ExpenseCallback.filter((F.action == 'change') & (F.value == 'date'))
 )
 async def process_change_date_click(callback: CallbackQuery, state: FSMContext):
     await state.set_state(ExpenseEditSteps.changing_date)
@@ -166,7 +164,7 @@ async def process_change_date_click(callback: CallbackQuery, state: FSMContext):
     )
 
 
-@expense_browser_router.message(StateFilter(ExpenseEditSteps.changing_date))
+@expense_browser_router.message(ExpenseEditSteps.changing_date)
 async def process_date_input(message: Message, state: FSMContext, session: AsyncSession):
     await message.delete()
     data = await state.get_data()
@@ -189,9 +187,7 @@ async def process_date_input(message: Message, state: FSMContext, session: Async
     await update_browser_message(message, data)
 
 
-@expense_browser_router.callback_query(
-    StateFilter(ExpenseEditSteps.changing_date), ExpenseCallback.filter(F.action == 'select')
-)
+@expense_browser_router.callback_query(ExpenseEditSteps.changing_date, ExpenseCallback.filter(F.action == 'select'))
 async def process_date_select(
     callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext, session: AsyncSession
 ):
@@ -206,9 +202,7 @@ async def process_date_select(
     await update_browser_message(callback.message, data)
 
 
-@expense_browser_router.callback_query(
-    StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'select')
-)
+@expense_browser_router.callback_query(ExpenseEditSteps.browsing, ExpenseCallback.filter(F.action == 'select'))
 async def process_expense_select(
     callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext, session: AsyncSession
 ):
@@ -224,9 +218,7 @@ async def process_expense_select(
     await callback.message.edit_text(text=expense_to_text(expense), reply_markup=get_action_kb())
 
 
-@expense_browser_router.callback_query(
-    StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'return')
-)
+@expense_browser_router.callback_query(ExpenseEditSteps.browsing, ExpenseCallback.filter(F.action == 'return'))
 async def process_return_click(callback: CallbackQuery, state: FSMContext):
     await state.update_data(expense=None)
     data = await state.get_data()
