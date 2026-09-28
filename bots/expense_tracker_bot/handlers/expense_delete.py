@@ -22,7 +22,7 @@ expense_delete_router = Router()
 @expense_delete_router.callback_query(
     StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'delete')
 )
-async def process_delete_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def process_delete_click(callback: CallbackQuery, state: FSMContext):
     await state.set_state(ExpenseEditSteps.deleting)
     await callback.message.edit_reply_markup(reply_markup=get_delete_confirmation_kb())
 
@@ -34,6 +34,6 @@ async def process_confirm_click(callback: CallbackQuery, state: FSMContext, sess
     expense = await state.get_value('expense')
     expense_repo = ExpenseRepository(session)
     await expense_repo.delete_expense_by_id(expense['id'])
-    await callback.message.edit_text(text=f'{expense_dict_to_text(expense)}\n\n{TEXTS["edit_success_delete"]}')
+    await callback.message.edit_text(text=f'{expense_dict_to_text(expense)}\n\n{TEXTS["success_delete"]}')
     await state.clear()
     await send_main_menu(callback.message)

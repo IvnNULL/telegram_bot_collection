@@ -81,7 +81,7 @@ async def proceed_to_next_step(
     await state.update_data(expense_data=expense_data)
 
     await update_expense_message(
-        message=message, state=state, prefix=TEXTS['add_start'], reply_markup=get_add_cancel_kb()
+        message=message, state=state, prefix=TEXTS['add_text'], reply_markup=get_add_cancel_kb()
     )
     await state.set_state(next_state)
     await update_step_message(message=message, state=state, text=next_text, reply_markup=reply_markup)

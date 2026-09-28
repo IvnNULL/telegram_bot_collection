@@ -30,7 +30,7 @@ def prepare_browser_data(expenses: list[Expense]) -> dict:
     button_labels = expenses_to_button_labels(expenses)
     if not button_labels:
         return {
-            'pages': [[{'text': TEXTS['edit_no_expenses'], 'index': 'pass'}]],
+            'pages': [[{'text': TEXTS['browser_no_expenses'], 'index': 'pass'}]],
             'expenses_ids': [],
             'current_page': 1,
             'total_pages': 1,
@@ -62,7 +62,7 @@ async def start_browser(message: Message, state: FSMContext, session: AsyncSessi
     data = prepare_browser_data(expenses)
 
     main_message_id = await message.answer(
-        text=TEXTS['edit_start'],
+        text=TEXTS['browser_start'],
         reply_markup=get_browsing_kb(
             data['pages'][data['current_page'] - 1],
             data['current_page'],
@@ -75,7 +75,7 @@ async def start_browser(message: Message, state: FSMContext, session: AsyncSessi
 
 async def update_browser_message(message: Message, data: dict):
     await message.bot.edit_message_text(
-        text=TEXTS['edit_start'],
+        text=TEXTS['browser_start'],
         chat_id=message.chat.id,
         message_id=data['main_message_id'],
         reply_markup=get_browsing_kb(
