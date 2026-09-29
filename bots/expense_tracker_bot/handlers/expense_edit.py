@@ -103,7 +103,8 @@ async def process_edit_select(callback: CallbackQuery, callback_data: ExpenseCal
             )
             await state.set_state(ExpenseEditSteps.waiting_for_date)
         case 'place':
-            pass
+            await callback.message.edit_text(text=TEXTS['fill_place'])
+            await state.set_state(ExpenseEditSteps.waiting_for_place)
         case 'category':
             pass
         case 'description':
@@ -144,6 +145,15 @@ async def process_date_select(callback: CallbackQuery, callback_data: ExpenseCal
     await update_expense_data('date', new_date, state)
     await update_expense_message(callback.message, state)
     await callback.message.edit_text(text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
+    await state.set_state(ExpenseEditSteps.editing)
+
+
+@expense_edit_router.message(ExpenseEditSteps.waiting_for_place, F.text)
+async def process_place_input(message: Message, state: FSMContext):
+    await message.delete()
+    await update_expense_data('place', message.text, state)
+    await update_expense_message(message, state)
+    await update_step_message(message, state, text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
     await state.set_state(ExpenseEditSteps.editing)
 
 
