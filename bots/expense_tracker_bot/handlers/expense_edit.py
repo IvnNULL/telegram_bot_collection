@@ -110,9 +110,7 @@ async def process_edit_select(
         case 'category':
             place_cat_repo = PlaceCategoryRepository(session)
             categories = await place_cat_repo.get_category_by_place(place=expense['place'])
-            await callback.message.edit_text(
-                text=TEXTS['fill_category'], reply_markup=get_suggestions_kb('select', categories)
-            )
+            await callback.message.edit_text(text=TEXTS['fill_category'], reply_markup=get_suggestions_kb(categories))
             await state.set_state(ExpenseEditSteps.waiting_for_category)
         case 'description':
             await callback.message.edit_text(text=TEXTS['fill_description'])
@@ -123,9 +121,7 @@ async def process_edit_select(
         case 'payer':
             payer_repo = PayerRepository(session)
             payers = await payer_repo.list_payers()
-            await callback.message.edit_text(
-                text=TEXTS['fill_payer'], reply_markup=get_suggestions_kb('select', payers)
-            )
+            await callback.message.edit_text(text=TEXTS['fill_payer'], reply_markup=get_suggestions_kb(payers))
             await state.set_state(ExpenseEditSteps.waiting_for_payer)
 
 

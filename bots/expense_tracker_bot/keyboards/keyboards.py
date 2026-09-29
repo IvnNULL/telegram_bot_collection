@@ -7,17 +7,17 @@ from keyboards.callbacks import ExpenseCallback, MenuCallback
 from texts.texts import TEXTS
 
 
-def get_suggestions_kb(action: str, values: list[str]) -> InlineKeyboardMarkup:
+def get_suggestions_kb(values: list[str]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for value in values:
-        builder.button(text=value, callback_data=ExpenseCallback(action=action, value=value).pack())
+        builder.button(text=value, callback_data=ExpenseCallback(action='select', value=value).pack())
     builder.adjust(3)
     return builder.as_markup()
 
 
 def get_date_suggestions_kb(last_date: date, days: int = 3) -> InlineKeyboardMarkup:
     dates = [(last_date - timedelta(i)).strftime('%d.%m.%Y') for i in range(days - 1, -1, -1)]
-    return get_suggestions_kb(action='select', values=dates)
+    return get_suggestions_kb(dates)
 
 
 def get_add_cancel_kb() -> InlineKeyboardMarkup:
@@ -87,13 +87,15 @@ def get_edit_fields_kb() -> InlineKeyboardMarkup:
     builder.button(text=TEXTS['date_btn'], callback_data=ExpenseCallback(action='edit', value='date').pack())
     builder.button(text=TEXTS['place_btn'], callback_data=ExpenseCallback(action='edit', value='place').pack())
     builder.button(text=TEXTS['category_btn'], callback_data=ExpenseCallback(action='edit', value='category').pack())
-    builder.button(text=TEXTS['description_btn'], callback_data=ExpenseCallback(action='edit', value='description').pack())
+    builder.button(
+        text=TEXTS['description_btn'], callback_data=ExpenseCallback(action='edit', value='description').pack()
+    )
     builder.button(text=TEXTS['amount_btn'], callback_data=ExpenseCallback(action='edit', value='amount').pack())
     builder.button(text=TEXTS['payer_btn'], callback_data=ExpenseCallback(action='edit', value='payer').pack())
 
     builder.button(text=TEXTS['save_button'], callback_data=ExpenseCallback(action='save').pack())
     builder.button(text=TEXTS['cancel_button'], callback_data=ExpenseCallback(action='cancel').pack())
-    builder.adjust(2,2,2,1)
+    builder.adjust(2, 2, 2, 1)
     return builder.as_markup()
 
 

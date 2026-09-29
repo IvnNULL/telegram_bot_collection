@@ -156,7 +156,7 @@ async def process_place_input(message: Message, state: FSMContext, session: Asyn
         expense_value=message.text,
         next_state=ExpenseAddSteps.waiting_for_category,
         next_text=TEXTS['fill_category'],
-        reply_markup=get_suggestions_kb('select', categories),
+        reply_markup=get_suggestions_kb(categories),
     )
 
 
@@ -217,7 +217,7 @@ async def process_amount_input(message: Message, state: FSMContext, session: Asy
         expense_value=amount,
         next_state=ExpenseAddSteps.waiting_for_payer,
         next_text=TEXTS['fill_payer'],
-        reply_markup=get_suggestions_kb('select', payers),
+        reply_markup=get_suggestions_kb(payers),
     )
 
 
