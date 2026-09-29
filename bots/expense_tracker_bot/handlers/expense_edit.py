@@ -102,9 +102,17 @@ async def process_edit_select(callback: CallbackQuery, callback_data: ExpenseCal
                 text=TEXTS['change_date'], reply_markup=get_date_suggestions_kb(last_date=last_date)
             )
             await state.set_state(ExpenseEditSteps.waiting_for_date)
+        case 'place':
+            pass
+        case 'category':
+            pass
         case 'description':
             await callback.message.edit_text(text=TEXTS['fill_description'])
             await state.set_state(ExpenseEditSteps.waiting_for_description)
+        case 'amount':
+            pass
+        case 'payer':
+            pass
 
 
 @expense_edit_router.message(ExpenseEditSteps.waiting_for_date, F.text)
