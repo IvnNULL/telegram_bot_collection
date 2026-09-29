@@ -1,7 +1,6 @@
 import logging
 
 from aiogram import F, Router
-from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,17 +18,13 @@ logger = logging.getLogger(__name__)
 expense_delete_router = Router()
 
 
-@expense_delete_router.callback_query(
-    StateFilter(ExpenseEditSteps.browsing), ExpenseCallback.filter(F.action == 'delete')
-)
+@expense_delete_router.callback_query(ExpenseEditSteps.browsing, ExpenseCallback.filter(F.action == 'delete'))
 async def process_delete_click(callback: CallbackQuery, state: FSMContext):
     await state.set_state(ExpenseEditSteps.deleting)
     await callback.message.edit_reply_markup(reply_markup=get_delete_confirmation_kb())
 
 
-@expense_delete_router.callback_query(
-    StateFilter(ExpenseEditSteps.deleting), ExpenseCallback.filter(F.action == 'confirm')
-)
+@expense_delete_router.callback_query(ExpenseEditSteps.deleting, ExpenseCallback.filter(F.action == 'confirm'))
 async def process_confirm_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
     expense = await state.get_value('expense')
     expense_repo = ExpenseRepository(session)
