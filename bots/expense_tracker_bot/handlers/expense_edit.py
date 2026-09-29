@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.repositories import ExpenseRepository, PlaceCategoryRepository
+from database.repositories import ExpenseRepository, PlaceCategoryRepository, PayerRepository
 from handlers.main_menu import send_main_menu
 from keyboards.callbacks import ExpenseCallback
 from keyboards.keyboards import get_edit_fields_kb, get_date_suggestions_kb, get_suggestions_kb
@@ -121,7 +121,12 @@ async def process_edit_select(
             await callback.message.edit_text(text=TEXTS['fill_amount'])
             await state.set_state(ExpenseEditSteps.waiting_for_amount)
         case 'payer':
-            pass
+            payer_repo = PayerRepository(session)
+            payers = await payer_repo.list_payers()
+            await callback.message.edit_text(
+                text=TEXTS['fill_payer'], reply_markup=get_suggestions_kb('select', payers)
+            )
+            await state.set_state(ExpenseEditSteps.waiting_for_payer)
 
 
 @expense_edit_router.message(ExpenseEditSteps.waiting_for_date, F.text)
@@ -203,4 +208,21 @@ async def process_amount_input(message: Message, state: FSMContext):
     await update_expense_data('amount', amount, state)
     await update_expense_message(message, state)
     await update_step_message(message, state, text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
+    await state.set_state(ExpenseEditSteps.editing)
+
+
+@expense_edit_router.message(ExpenseEditSteps.waiting_for_payer, F.text)
+async def process_payer_input(message: Message, state: FSMContext):
+    await message.delete()
+    await update_expense_data('payer', message.text, state)
+    await update_expense_message(message, state)
+    await update_step_message(message, state, text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
+    await state.set_state(ExpenseEditSteps.editing)
+
+
+@expense_edit_router.callback_query(ExpenseEditSteps.waiting_for_payer, ExpenseCallback.filter(F.action == 'select'))
+async def process_payer_select(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
+    await update_expense_data('payer', callback_data.value, state)
+    await update_expense_message(callback.message, state)
+    await callback.message.edit_text(text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
     await state.set_state(ExpenseEditSteps.editing)
