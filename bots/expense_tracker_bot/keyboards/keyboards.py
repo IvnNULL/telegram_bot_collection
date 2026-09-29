@@ -84,7 +84,7 @@ def get_action_kb() -> InlineKeyboardMarkup:
 
 def get_edit_fields_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    # builder.button(text=TEXTS['date_btn'], callback_data=ExpenseCallback(action='edit', value='date').pack())
+    builder.button(text=TEXTS['date_btn'], callback_data=ExpenseCallback(action='edit', value='date').pack())
     # builder.button(text=TEXTS['place_btn'], callback_data=ExpenseCallback(action='edit', value='place').pack())
     # builder.button(text=TEXTS['category_btn'], callback_data=ExpenseCallback(action='edit', value='category').pack())
     builder.button(text=TEXTS['description_btn'], callback_data=ExpenseCallback(action='edit', value='description').pack())

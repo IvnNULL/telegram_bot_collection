@@ -1,5 +1,6 @@
 import logging
 from contextlib import suppress
+from datetime import date, timedelta, datetime
 from typing import Any
 
 from aiogram import F, Router
@@ -11,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.repositories import ExpenseRepository
 from handlers.main_menu import send_main_menu
 from keyboards.callbacks import ExpenseCallback
-from keyboards.keyboards import get_edit_fields_kb
+from keyboards.keyboards import get_edit_fields_kb, get_date_suggestions_kb
 from services.expense_service import expense_dict_to_text
 from states.states import ExpenseEditSteps
 from texts.texts import TEXTS
@@ -73,14 +74,69 @@ async def process_cancel_click(callback: CallbackQuery, state: FSMContext):
     await send_main_menu(callback.message)
 
 
+@expense_edit_router.callback_query(ExpenseEditSteps.editing, ExpenseCallback.filter(F.action == 'save'))
+async def process_save_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    await callback.answer()
+
+    expense_data = await state.get_value('expense')
+    expense_repo = ExpenseRepository(session)
+    await expense_repo.update_expense(expense_data)
+    await session.commit()
+
+    await update_expense_message(callback.message, state, prefix=TEXTS['success_edit'])
+    await callback.message.delete()
+    await state.clear()
+    await send_main_menu(callback.message)
+
+
 @expense_edit_router.callback_query(ExpenseEditSteps.editing, ExpenseCallback.filter(F.action == 'edit'))
 async def process_edit_select(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
     await callback.answer()
 
     match callback_data.value:
+        case 'date':
+            expense = await state.get_value('expense')
+            last_date = expense['date'] + timedelta(1)
+
+            await callback.message.edit_text(
+                text=TEXTS['change_date'], reply_markup=get_date_suggestions_kb(last_date=last_date)
+            )
+            await state.set_state(ExpenseEditSteps.waiting_for_date)
         case 'description':
             await callback.message.edit_text(text=TEXTS['fill_description'])
             await state.set_state(ExpenseEditSteps.waiting_for_description)
+
+
+@expense_edit_router.message(ExpenseEditSteps.waiting_for_date, F.text)
+async def process_date_input(message: Message, state: FSMContext):
+    await message.delete()
+    try:
+        new_date = datetime.strptime(message.text, TEXTS['DATE_FORMAT']).date()
+    except ValueError:
+        expense = await state.get_value('expense')
+        last_date = expense['date'] + timedelta(1)
+
+        await update_step_message(
+            message=message,
+            state=state,
+            text=TEXTS['change_date_incorrect'],
+            reply_markup=get_date_suggestions_kb(last_date=last_date),
+        )
+        return
+
+    await update_expense_data('date', new_date, state)
+    await update_expense_message(message, state)
+    await update_step_message(message, state, text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
+    await state.set_state(ExpenseEditSteps.editing)
+
+
+@expense_edit_router.callback_query(ExpenseEditSteps.waiting_for_date, ExpenseCallback.filter(F.action == 'select'))
+async def process_date_select(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
+    new_date = datetime.strptime(callback_data.value, TEXTS['DATE_FORMAT']).date()
+    await update_expense_data('date', new_date, state)
+    await update_expense_message(callback.message, state)
+    await callback.message.edit_text(text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
+    await state.set_state(ExpenseEditSteps.editing)
 
 
 @expense_edit_router.message(ExpenseEditSteps.waiting_for_description, F.text)
@@ -90,18 +146,3 @@ async def process_description_input(message: Message, state: FSMContext):
     await update_expense_message(message, state)
     await update_step_message(message, state, text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
     await state.set_state(ExpenseEditSteps.editing)
-
-
-@expense_edit_router.callback_query(ExpenseEditSteps.editing, ExpenseCallback.filter(F.action == 'save'))
-async def process_save_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
-    await callback.answer()
-
-    expense_data = await state.get_value('expense')
-    expense_repo = ExpenseRepository(session)
-    await expense_repo.get_update_expenses(expense_data)
-    await session.commit()
-
-    await update_expense_message(callback.message, state, prefix=TEXTS['success_edit'])
-    await callback.message.delete()
-    await state.clear()
-    await send_main_menu(callback.message)
