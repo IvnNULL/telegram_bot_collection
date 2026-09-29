@@ -1,6 +1,6 @@
 import logging
 from contextlib import suppress
-from datetime import date, timedelta, datetime
+from datetime import timedelta, datetime
 from typing import Any
 
 from aiogram import F, Router
@@ -9,10 +9,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database.repositories import ExpenseRepository
+from database.repositories import ExpenseRepository, PlaceCategoryRepository
 from handlers.main_menu import send_main_menu
 from keyboards.callbacks import ExpenseCallback
-from keyboards.keyboards import get_edit_fields_kb, get_date_suggestions_kb
+from keyboards.keyboards import get_edit_fields_kb, get_date_suggestions_kb, get_suggestions_kb
 from services.expense_service import expense_dict_to_text
 from states.states import ExpenseEditSteps
 from texts.texts import TEXTS
@@ -90,12 +90,14 @@ async def process_save_click(callback: CallbackQuery, state: FSMContext, session
 
 
 @expense_edit_router.callback_query(ExpenseEditSteps.editing, ExpenseCallback.filter(F.action == 'edit'))
-async def process_edit_select(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
+async def process_edit_select(
+    callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext, session: AsyncSession
+):
     await callback.answer()
+    expense = await state.get_value('expense')
 
     match callback_data.value:
         case 'date':
-            expense = await state.get_value('expense')
             last_date = expense['date'] + timedelta(1)
 
             await callback.message.edit_text(
@@ -106,7 +108,12 @@ async def process_edit_select(callback: CallbackQuery, callback_data: ExpenseCal
             await callback.message.edit_text(text=TEXTS['fill_place'])
             await state.set_state(ExpenseEditSteps.waiting_for_place)
         case 'category':
-            pass
+            place_cat_repo = PlaceCategoryRepository(session)
+            categories = await place_cat_repo.get_category_by_place(place=expense['place'])
+            await callback.message.edit_text(
+                text=TEXTS['fill_category'], reply_markup=get_suggestions_kb('select', categories)
+            )
+            await state.set_state(ExpenseEditSteps.waiting_for_category)
         case 'description':
             await callback.message.edit_text(text=TEXTS['fill_description'])
             await state.set_state(ExpenseEditSteps.waiting_for_description)
@@ -154,6 +161,23 @@ async def process_place_input(message: Message, state: FSMContext):
     await update_expense_data('place', message.text, state)
     await update_expense_message(message, state)
     await update_step_message(message, state, text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
+    await state.set_state(ExpenseEditSteps.editing)
+
+
+@expense_edit_router.message(ExpenseEditSteps.waiting_for_category, F.text)
+async def process_category_input(message: Message, state: FSMContext):
+    await message.delete()
+    await update_expense_data('category', message.text, state)
+    await update_expense_message(message, state)
+    await update_step_message(message, state, text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
+    await state.set_state(ExpenseEditSteps.editing)
+
+
+@expense_edit_router.callback_query(ExpenseEditSteps.waiting_for_category, ExpenseCallback.filter(F.action == 'select'))
+async def process_category_select(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
+    await update_expense_data('category', callback_data.value, state)
+    await update_expense_message(callback.message, state)
+    await callback.message.edit_text(text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
     await state.set_state(ExpenseEditSteps.editing)
 
 
