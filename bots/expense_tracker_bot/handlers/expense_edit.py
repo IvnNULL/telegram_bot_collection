@@ -1,20 +1,51 @@
 import logging
 from contextlib import suppress
+from typing import Any
 
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from database.repositories import ExpenseRepository
 from handlers.main_menu import send_main_menu
 from keyboards.callbacks import ExpenseCallback
 from keyboards.keyboards import get_edit_fields_kb
+from services.expense_service import expense_dict_to_text
 from states.states import ExpenseEditSteps
 from texts.texts import TEXTS
 
 logger = logging.getLogger(__name__)
 
 expense_edit_router = Router()
+
+
+async def update_expense_data(expense_field: str, expense_value: Any, state: FSMContext) -> None:
+    expense_data = await state.get_value('expense', {})
+    expense_data.update({expense_field: expense_value})
+    await state.update_data(expense=expense_data)
+
+
+async def update_expense_message(message: Message, state: FSMContext, prefix: str | None = None) -> None:
+    data = await state.get_data()
+    expense_text = expense_dict_to_text(data['expense'])
+    if prefix:
+        expense_text = f'{prefix}\n\n{expense_text}'
+    with suppress(TelegramBadRequest):
+        await message.bot.edit_message_text(
+            text=expense_text, chat_id=message.chat.id, message_id=data['main_message_id']
+        )
+
+
+async def update_step_message(
+    message: Message, state: FSMContext, text: str, reply_markup: InlineKeyboardMarkup | None = None
+) -> None:
+    step_message_id = await state.get_value('step_message_id')
+    with suppress(TelegramBadRequest):
+        await message.bot.edit_message_text(
+            text=text, chat_id=message.chat.id, message_id=step_message_id, reply_markup=reply_markup
+        )
 
 
 @expense_edit_router.callback_query(ExpenseEditSteps.browsing, ExpenseCallback.filter(F.action == 'edit'))
@@ -38,5 +69,39 @@ async def process_cancel_click(callback: CallbackQuery, state: FSMContext):
     with suppress(TelegramBadRequest):
         await callback.message.bot.delete_message(chat_id=callback.message.chat.id, message_id=main_message_id)
 
+    await state.clear()
+    await send_main_menu(callback.message)
+
+
+@expense_edit_router.callback_query(ExpenseEditSteps.editing, ExpenseCallback.filter(F.action == 'edit'))
+async def process_edit_select(callback: CallbackQuery, callback_data: ExpenseCallback, state: FSMContext):
+    await callback.answer()
+
+    match callback_data.value:
+        case 'description':
+            await callback.message.edit_text(text=TEXTS['fill_description'])
+            await state.set_state(ExpenseEditSteps.waiting_for_description)
+
+
+@expense_edit_router.message(ExpenseEditSteps.waiting_for_description, F.text)
+async def process_description_input(message: Message, state: FSMContext):
+    await message.delete()
+    await update_expense_data('description', message.text, state)
+    await update_expense_message(message, state)
+    await update_step_message(message, state, text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
+    await state.set_state(ExpenseEditSteps.editing)
+
+
+@expense_edit_router.callback_query(ExpenseEditSteps.editing, ExpenseCallback.filter(F.action == 'save'))
+async def process_save_click(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    await callback.answer()
+
+    expense_data = await state.get_value('expense')
+    expense_repo = ExpenseRepository(session)
+    await expense_repo.get_update_expenses(expense_data)
+    await session.commit()
+
+    await update_expense_message(callback.message, state, prefix=TEXTS['success_edit'])
+    await callback.message.delete()
     await state.clear()
     await send_main_menu(callback.message)

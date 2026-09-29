@@ -54,6 +54,15 @@ class ExpenseRepository(BaseRepository):
         data = await self.session.scalar(select(Expense).where(Expense.id == expense_id))
         return data
 
+    async def update_expense(self, new_data: dict) -> None:
+        expense = await self.get_expense_by_id(new_data['id'])
+        expense.date = new_data['date']
+        expense.category = new_data['category']
+        expense.place = new_data['place']
+        expense.description = new_data['description']
+        expense.amount = new_data['amount']
+        expense.payer = new_data['payer']
+
     async def delete_expense_by_id(self, expense_id: int) -> None:
         await self.session.execute(delete(Expense).where(Expense.id == expense_id))
         await self.session.commit()

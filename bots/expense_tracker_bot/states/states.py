@@ -17,3 +17,10 @@ class ExpenseEditSteps(StatesGroup):
     changing_date = State()
     deleting = State()
     editing = State()
+
+    waiting_for_date = State()
+    waiting_for_place = State()
+    waiting_for_category = State()
+    waiting_for_description = State()
+    waiting_for_amount = State()
+    waiting_for_payer = State()
