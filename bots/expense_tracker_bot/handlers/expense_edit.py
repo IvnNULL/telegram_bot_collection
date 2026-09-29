@@ -118,7 +118,8 @@ async def process_edit_select(
             await callback.message.edit_text(text=TEXTS['fill_description'])
             await state.set_state(ExpenseEditSteps.waiting_for_description)
         case 'amount':
-            pass
+            await callback.message.edit_text(text=TEXTS['fill_amount'])
+            await state.set_state(ExpenseEditSteps.waiting_for_amount)
         case 'payer':
             pass
 
@@ -185,6 +186,21 @@ async def process_category_select(callback: CallbackQuery, callback_data: Expens
 async def process_description_input(message: Message, state: FSMContext):
     await message.delete()
     await update_expense_data('description', message.text, state)
+    await update_expense_message(message, state)
+    await update_step_message(message, state, text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
+    await state.set_state(ExpenseEditSteps.editing)
+
+
+@expense_edit_router.message(ExpenseEditSteps.waiting_for_amount, F.text)
+async def process_amount_input(message: Message, state: FSMContext):
+    await message.delete()
+    try:
+        amount = int(float(message.text.replace(',', '.').replace(' ', '')))
+    except ValueError:
+        await update_step_message(message, state, text=TEXTS['fill_amount_error'])
+        return
+
+    await update_expense_data('amount', amount, state)
     await update_expense_message(message, state)
     await update_step_message(message, state, text=TEXTS['edit_text'], reply_markup=get_edit_fields_kb())
     await state.set_state(ExpenseEditSteps.editing)
